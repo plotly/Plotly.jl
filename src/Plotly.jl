@@ -20,16 +20,19 @@ function openurl(url::String)
     @linux_only run(`xdg-open $url`)
 end
 
+default_opts = [ 
+       "origin" => "plot",
+       "platform" => "julia",
+       "version" => "0.1"]
+
 function plot(p::PlotlyAccount,data::Array,options=Dict())
   opt = merge(default_options,options)
   r = HTTPClient.HTTPC.post("https://plot.ly/clientresp", 
-      [("un",p.username),
-       ("key",p.api_key),
-       ("origin","plot"),
-       ("platform","julia"),
-       ("version","0.1"),
-       ("args",json(data)),
-       ("kwargs",json(opt))])
+        merge(default_opts,
+          ["un" => p.username,
+           "key" => p.api_key,
+           "args" => json(data),
+           "kwargs" => json(opt)]))
   if r.http_code == 200
     b = JSON.parse(r.body)
     b["error"] == "" ? b["url"] : error(b["error"]) 
