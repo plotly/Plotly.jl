@@ -27,7 +27,7 @@ default_opts = [
 
 function plot(p::PlotlyAccount,data::Array,options=Dict())
   opt = merge(default_options,options)
-  r = HTTPClient.HTTPC.post("https://plot.ly/clientresp", 
+  r = HTTPClient.HTTPC.post("http://plot.ly/clientresp", 
         merge(default_opts,
           ["un" => p.username,
            "key" => p.api_key,
