@@ -1,5 +1,11 @@
 #A Julia interface to the plot.ly API
 
+## Installation
+
+Given that you have Julia v0.2,
+
+    Pkg2.clone("https://github.com/astrieanna/plotly.jl")
+
 ## Usage
 
     julia> using Plotly
