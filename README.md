@@ -18,7 +18,7 @@ You'll need to create a plot.ly account and find out your API key before you'll 
     Success! Check your email to activate account.
     
 ## Signin 
-    julia> Plotly.signin("username","your api_key")
+    julia> Plotly.signin("username","your api key")
     PlotlyAccount("username","your api key")
 
 ## Plot && Open in browser
