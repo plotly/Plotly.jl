@@ -1,6 +1,6 @@
 #A Julia interface to the plot.ly API
 
-Forked from [astrieanna/Plotly.jl]("https://github.com/astrieanna/Plotly.jl")
+Forked from [astrieanna/Plotly.jl](https://github.com/astrieanna/Plotly.jl)
 
 ## Installation
 
