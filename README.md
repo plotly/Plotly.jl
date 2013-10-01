@@ -9,8 +9,12 @@ Given that you have Julia v0.2,
 ## Usage
 
     julia> using Plotly
-
-    julia> acc = Plotly.PlotlyAccount("username","your api key")
+## New user signup
+    julia> Plotly.signup("username","email")
+    Hi Five! Check your email to activate account.
+    
+## Signin 
+    julia> Plotly.signin("username","your api_key")
     PlotlyAccount("username","your api key")
 
 You'll need to create a plot.ly account and find out your API key before you'll be able to use this package.
