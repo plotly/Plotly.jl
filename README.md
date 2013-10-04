@@ -15,10 +15,10 @@ Given that you have Julia v0.2,
 You'll need to create a plot.ly account and find out your API key before you'll be able to use this package.
 ## New user signup
     julia> Plotly.signup("username","email")
-    Hi Five! Check your email to activate account.
+    Success! Check your email to activate account.
     
 ## Signin 
-    julia> Plotly.signin("username","your api_key")
+    julia> Plotly.signin("username","your api key")
     PlotlyAccount("username","your api key")
 
 ## Plot && Open in browser
