@@ -38,8 +38,9 @@ function signup(username::String, email::String)
         println(results[flag])
       end
     end
-    if !haskey(results,"error") && haskey(results,"tmp_pw")
+    if haskey(results,"tmp_pw")
       println("Success! Check your email to activate your account.")
+      results
     end
   end
 end
@@ -62,11 +63,13 @@ function plot(data::Array,options=Dict())
            "key" => plotlyaccount.api_key,
            "args" => json(data),
            "kwargs" => json(opt)]))
-  if r.http_code == 200
-    b=JSON.parse(bytestring(r.body))
-    b["error"] == "" ? b["url"] : error(b["error"]) 
+  body=JSON.parse(bytestring(r.body))
+  if r.http_code != 200 
+    error(["r.http_code"])
+  elseif body["error"] != ""
+    error(body["error"])
   else
-    error(r.http_code)
+    body
   end
 end
 
