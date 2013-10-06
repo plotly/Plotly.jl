@@ -2,6 +2,8 @@
 
 Forked from [astrieanna/Plotly.jl](https://github.com/astrieanna/Plotly.jl)
 
+README quickly to get started. Alternately, checkout out the pretty Julia docs at http://plot.ly/api
+
 ## Installation
 
 Given that you have Julia v0.2,
