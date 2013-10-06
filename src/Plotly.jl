@@ -111,7 +111,7 @@ function style(style_opts,meta_opts=Dict())
         merge(default_opts,
           ["un" => plotlyaccount.username,
            "key" => plotlyaccount.api_key,
-           "args" => json(["style" =>style_opts]),
+           "args" => json([style_opts]),
            "origin" => "style",
            "kwargs" => json(meta_opts)]))
   __parseresponse(r)
