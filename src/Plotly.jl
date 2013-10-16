@@ -13,82 +13,6 @@ type CurrentPlot
     url::String
 end
 
-type Font
-    family::String
-    size::Number
-    color::String
-end
-
-type Margin
-    left::Number #Key is "l" for REST API, not "left"
-    right::Number # "r"
-    top::Number # "t"
-    bottom::Number # "b"
-    pad::Number
-end
-
-type Axis
-    range::Array{Int64,1}
-    _type::ASCIIString
-    mirror::Bool
-    linecolor::ASCIIString
-    linewidth::Int64
-    tick0::Int64
-    dtick::Int64
-    ticks::ASCIIString
-    ticklen::Int64
-    tickwidth::Int64
-    tickcolor::ASCIIString
-    nticks::Int64
-    showticklabels::Bool
-    tickangle::ASCIIString
-    exponentformat::ASCIIString
-    showexponent::ASCIIString
-    showgrid::Bool
-    gridcolor::ASCIIString
-    gridwidth::Int64
-    autorange::Bool
-    autotick::Bool
-    zeroline::Bool
-    zerolinecolor::ASCIIString
-    zerolinewidth::Int64
-    title::ASCIIString
-    unit::ASCIIString
-    titlefont::Font
-    tickfont::Font
-end
-
-type Legend
-    bgcolor::String
-    bordercolor::String
-    borderwidth::Number
-    font::Font
-    traceorder::String
-end
-
-type Layout
-    title::ASCIIString
-    xaxis::Axis
-    yaxis::Axis
-    legend::Legend
-    width::Int64
-    height::Int64
-    autosize::ASCIIString
-    margin::Margin
-    paper_bgcolor::ASCIIString
-    plot_bgcolor::ASCIIString
-    barmode::ASCIIString
-    bargap::Number
-    bargroupgap::Number
-    boxmode::ASCIIString
-    boxgap::Number
-    boxgroupgap::Number
-    font::Font
-    titlefont::Font
-    dragmode::ASCIIString
-    hovermode::ASCIIString
-end
-
 default_options = ["filename"=>"Plot from Julia API",
 "world_readable"=> true,
 "layout"=>["title"=>"Plot from Julia API"]]
@@ -174,7 +98,7 @@ function layout(layout_opts::Dict,meta_opts=Dict())
     __parseresponse(r)
 end
 
-function style(style_opts::Dict,meta_opts=Dict())
+function style(style_opts,meta_opts=Dict())
     global plotlyaccount
     if !isdefined(Plotly,:plotlyaccount)
         println("Please 'signin(username, api_key)' before proceeding. See http://plot.ly/API for help!")
@@ -220,115 +144,106 @@ function __parseresponse(r)
     end
 end
 
-function get_layout_template()
-    return Layout(
-        "Click to enter Plot title", #title
-            Axis( #xaxis
-                [-1,6], #range
-                "-", #_type
-                true, #mirror
-                "#000", #linecolor
-                1, #linewidth
-                0, #tick0
-                2, #dtick y1
-                "outside", #ticks
-                5, #ticklen
-                1, #tickwidth
-                "#000", #tickcolor
-                0, #nticks
-                true, #showticklabels
-                "auto", #tickangle
-                "e", #exponentformat
-                "all", #showexponent
-                true, #showgrid
-                "#ddd", #showgrid
-                1, #gridwidth
-                true, #autorange
-                true, #autotick
-                true, #zeroline
-                "#000", #zerolinecolor
-                1, #zerolinewidth
-                "Click to enter X axis title", #title Y
-                "",  #unit
-                Font( #titlefont
-                    "", #family
-                    0, #size
-                    ""), #color
-                Font( #tickfont
-                    "", #family
-                    0, #size
-                    "")), #color
-            Axis( #yaxis
-                [-1,6], #range
-                "-", #_type
-                true, #mirror
-                "#000", #linecolor
-                1, #linewidth
-                0, #tick0
-                1, #dtick 
-                "outside", #ticks
-                5, #ticklen
-                1, #tickwidth
-                "#000", #tickcolor
-                0, #nticks
-                true, #showticklabels
-                "auto", #tickangle
-                "e", #exponentformat
-                "all", #showexponent
-                true, #showgrid
-                "#ddd", #showgrid
-                1, #gridwidth
-                true, #autorange
-                true, #autotick
-                true, #zeroline
-                "#000", #zerolinecolor
-                1, #zerolinewidth
-                "Click to enter Y axis title", 
-                "",  #unit
-                Font( #titlefont
-                    "", #family
-                    0, #size
-                    ""), #color
-                Font( #tickfont
-                    "", #family
-                    0, #size
-                    "")), #color
-            Legend( #legend
-                "#fff", #bgcolor
-                "#000", #bordercolor
-                1, #borderwidth
-                Font( #font
-                    "", #family
-                    0, #size
-                    ""), #color
-                "normal"), #traceorder
-            700, #width
-            450, #height
-            "initial", #autosize
-            Margin( #margin
-                80, #l
-                80, #r
-                80, #t
-                80, #b
-                2), #pad
-            "#fff", #paper_bgcolor
-            "#fff", #plot_bgcolor
-            "stack", #barmode
-            0.2, #bargap
-            0.0, #bargroupgap
-            "overlay", #boxmode
-            0.3, #boxgap
-            0.3, #boxgroupgap
-            Font( #font
-                "Arial, sans-serif;", #family
-                12, #size
-                "#000"), #color
-            Font( #titlefont
-                "", #family
-                0, #size
-                ""), #color
-            "zoom", #dragmode
-            "x") #hovermode
+function get_template(format_type::String)
+    if format_type == "layout" 
+        return [
+                "title"=>"Click to enter Plot title",
+                "xaxis"=>[
+                        "range"=>[-1,6],
+                        "type"=>"-",
+                        "mirror"=>true,
+                        "linecolor"=>"#000",
+                        "linewidth"=>1, 
+                        "tick0"=>0,
+                        "dtick"=>2,
+                        "ticks"=>"outside",
+                        "ticklen"=>5,
+                        "tickwidth"=>1,
+                        "tickcolor"=>"#000",
+                        "nticks"=>0, 
+                        "showticklabels"=>true,
+                        "tickangle"=>"auto",
+                        "exponentformat"=>"e",
+                        "showexponent"=>"all", 
+                        "showgrid"=>true,
+                        "gridcolor"=>"#ddd",
+                        "gridwidth"=>1, 
+                        "autorange"=>true,
+                        "autotick"=>true, 
+                        "zeroline"=>true,
+                        "zerolinecolor"=>"#000",
+                        "zerolinewidth"=>1, 
+                        "title"=>"Click to enter X axis title",
+                        "unit"=>"", 
+                        "titlefont"=>["family"=>"","size"=>0,"color"=>""], 
+                        "tickfont"=>["family"=>"","size"=>0,"color"=>""]], 
+                "yaxis"=>[
+                        "range"=>[-1,4],
+                        "type"=>"-",
+                        "mirror"=>true,
+                        "linecolor"=>"#000",
+                        "linewidth"=>1, 
+                        "tick0"=>0,
+                        "dtick"=>1,
+                        "ticks"=>"outside",
+                        "ticklen"=>5,
+                        "tickwidth"=>1,
+                        "tickcolor"=>"#000",
+                        "nticks"=>0, 
+                        "showticklabels"=>true,
+                        "tickangle"=>"auto",
+                        "exponentformat"=>"e",
+                        "showexponent"=>"all", 
+                        "showgrid"=>true,
+                        "gridcolor"=>"#ddd",
+                        "gridwidth"=>1, 
+                        "autorange"=>true,
+                        "autotick"=>true, 
+                        "zeroline"=>true,
+                        "zerolinecolor"=>"#000",
+                        "zerolinewidth"=>1, 
+                        "title"=>"Click to enter Y axis title",
+                        "unit"=>"", 
+                        "titlefont"=>["family"=>"","size"=>0,"color"=>""], 
+                        "tickfont"=>["family"=>"","size"=>0,"color"=>""]], 
+                "legend"=>[
+                        "bgcolor"=>"#fff", 
+                        "bordercolor"=>"#000", 
+                        "borderwidth"=>1, 
+                        "font"=>["family"=>"","size"=>0,"color"=>""], 
+                        "traceorder"=>"normal"],
+                "width"=>700,
+                "height"=>450,
+                "autosize"=>"initial", 
+                "margin"=>["l"=>80,"r"=>80,"t"=>80,"b"=>80,"pad"=>2],
+                "paper_bgcolor"=>"#fff",
+                "plot_bgcolor"=>"#fff",
+                "barmode"=>"stack",
+                "bargap"=>0.2,
+                "bargroupgap"=>0.0,
+                "boxmode"=>"overlay",
+                "boxgap"=>0.3,
+                "boxgroupgap"=>0.3,
+                "font"=>["family"=>"Arial, sans-serif;","size"=>12,"color"=>"#000"],
+                "titlefont"=>["family"=>"","size"=>0,"color"=>""],
+                "dragmode"=>"zoom",
+                "hovermode"=>"x"]
+    end
 end
+
+function help(func_name::String)
+    print("hihi")
+end
+function help()
+    println("Please enter the name of the funtion you'd like help with")
+    println("Options include:")
+    println("\t Plotly.help(\"plot\") OR Plotly.help(:plot)")
+    println("\t Plotly.help(\"layout\") OR Plotly.help(:layout)")
+    println("\t Plotly.help(\"style\") OR Plotly.help(:style)")
+end
+function help(func_name::Symbol)
+    print("hihi")
+end
+
 
 end
