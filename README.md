@@ -6,9 +6,9 @@ README quickly to get started. Alternately, checkout out the pretty Julia docs a
 
 ## Installation
 
-Given that you have Julia v0.2,
+Given that you have Julia v0.2.1,
 
-    Pkg2.clone("https://github.com/shirlenator/Plotly.jl")
+    Pkg.clone("https://github.com/plotly/Plotly.jl")
 
 ## Usage
 
