@@ -15,7 +15,7 @@ end
 
 default_options = ["filename"=>"Plot from Julia API",
 "world_readable"=> true,
-"layout"=>[]]
+"layout"=>Dict()]
 
 ## Taken from https://github.com/johnmyleswhite/Vega.jl/blob/master/src/Vega.jl#L51
 # Open a URL in a browser
@@ -28,7 +28,7 @@ end
 default_opts = [ 
 "origin" => "plot",
 "platform" => "Julia",
-"version" => "0.1"]
+"version" => "0.2"]
 
 function signup(username::String, email::String)
     r = HTTPClient.HTTPC.post("http://plot.ly/apimkacct", 
