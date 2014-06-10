@@ -35,6 +35,20 @@ That last line is what the REPL prints out,
 as a Firefox tab opens with the plot.
 You can also just call `plot` by itself, and you'll get a String that's the url of your chart.
 
+## Plot Functions and Polynomials
+    julia> Plotly.plot(abs)
+    julia> Plotly.plot([sqrt, log], ["left"=>10, "right"=>20, "step"=>0.1])
+
+You can now plot functions directly.
+The first line shows how to plot the absolute value function, and the second line plots
+the square root and logarithm functions, both from 10 to 20 at increments of 0.1.
+
+    julia> using Polynomial
+    julia> x = Poly([1,0])
+    julia> Plotly.plot(3x^3 + 2x^2 - x + 1)
+
+If you have the Polynomial package installed, you can plot them directly the same way as math functions.
+
 ## Style and Layout
     julia> Plotly.style(["line"=>["color"=>"rgb(255,0,0)","width"=>10]])
     
