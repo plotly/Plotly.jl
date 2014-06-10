@@ -1,5 +1,3 @@
-pkgs = keys(Pkg.installed())
-
 function get_points(f::Function, options=Dict())
 	opt = merge(["left"=>-10, "right"=>10, "step"=>0.5, "name"=>"$f"], options)
 	n::Int = (opt["right"] - opt["left"]) / opt["step"] + 1
@@ -24,7 +22,7 @@ function plot(f::Function, options=Dict())
 	return plot([f], options)
 end
 
-if in("Polynomial", pkgs)
+if Pkg.installed("Polynomial") !== nothing
 	using Polynomial
 
 	function plot{T<:Number}(ps::Array{Poly{T},1}, options=Dict())
