@@ -11,7 +11,7 @@ function get_points(f::Function, options=Dict())
 		X[i] = round(x, 8)
 		Y[i] = round(y, 8)
 	end
-	print(["x"=>X, "y"=>Y, "type"=>"scatter", "mode"=>"lines", "name"=>opt["name"]])
+
 	return ["x"=>X, "y"=>Y, "type"=>"scatter", "mode"=>"lines", "name"=>opt["name"]]
 end
 
