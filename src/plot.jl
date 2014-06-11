@@ -46,3 +46,14 @@ if Pkg.installed("TimeSeries") !== nothing
 		return plot([data], options)
 	end
 end
+
+if Pkg.installed("WAV") !== nothing
+	function plot{T<:Number,U<:Number,V<:Number}(wav::(Array{T,2},U,V,UnionType), options=Dict())
+		opt = merge(["layout"=>["xaxis"=>["title"=>"seconds","dtick"=>1,"tick0"=>0,"autotick"=>false]]], options)
+		w, Fs = wav
+		X = [f/Fs for f in 1.0:length(w)]
+		Y = [round(y,8) for y in w]
+		data = [["x"=>X, "y"=>Y, "type"=>"scatter", "mode"=>"lines", "name"=>"WAV data"]]
+		return plot([data], opt)
+	end
+end

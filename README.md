@@ -61,3 +61,9 @@ If you have the Polynomial package installed, you can plot them directly the sam
     julia> Plotly.plot(t)
 
 If you have the TimeSeries package installed, you can plot them directly by passing a TimeArray argument.
+
+## Plot WAV Files
+    julia> using WAV
+    julia> Plotly.plot(wavread("filename.wav"))
+
+If you have the WAV package installed, you can plot WAV files by passing a call to the wavread function.
