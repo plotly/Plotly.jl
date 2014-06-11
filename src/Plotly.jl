@@ -79,6 +79,8 @@ function plot(data::Array,options=Dict())
     end
 end
 
+include("plot.jl")
+
 function layout(layout_opts::Dict,meta_opts=Dict())
     global plotlyaccount
     if !isdefined(Plotly,:plotlyaccount)
