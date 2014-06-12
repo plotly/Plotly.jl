@@ -35,6 +35,11 @@ That last line is what the REPL prints out,
 as a Firefox tab opens with the plot.
 You can also just call `plot` by itself, and you'll get a String that's the url of your chart.
 
+## Style and Layout
+    julia> Plotly.style(["line"=>["color"=>"rgb(255,0,0)","width"=>10]])
+    
+    julia> Plotly.layout(["layout"=>["title"=>"Time Wasted"]])
+
 ## Plot Functions and Polynomials
     julia> Plotly.plot(abs)
     julia> Plotly.plot([sqrt, log], ["left"=>10, "right"=>20, "step"=>0.1])
@@ -48,13 +53,17 @@ the square root and logarithm functions, both from 10 to 20 at increments of 0.1
     julia> Plotly.plot(3x^3 + 2x^2 - x + 1)
 
 If you have the Polynomial package installed, you can plot them directly the same way as math functions.
-
-## Style and Layout
-    julia> Plotly.style(["line"=>["color"=>"rgb(255,0,0)","width"=>10]])
     
-    julia> Plotly.layout(["layout"=>["title"=>"Time Wasted"]])
-    
+## Plot TimeSeries
+    julia> using TimeSeries
+    julia> d = [date(2012,5,29):date(2013,5,29)]
+    julia> t = TimeArray(d, rand(length(d),2), ["foo","bar"])
+    julia> Plotly.plot(t)
 
+If you have the TimeSeries package installed, you can plot them directly by passing a TimeArray argument.
 
+## Plot WAV Files
+    julia> using WAV
+    julia> Plotly.plot(wavread("filename.wav"))
 
-
+If you have the WAV package installed, you can plot WAV files by passing a call to the wavread function.

@@ -23,7 +23,7 @@ function plot(f::Function, options=Dict())
 end
 
 if Pkg.installed("Polynomial") !== nothing
-	using Polynomial
+	import Polynomial: Poly, polyval
 
 	function plot{T<:Number}(ps::Array{Poly{T},1}, options=Dict())
 		data = [get_points(x->polyval(p,x), merge(["name"=>"$p"], options)) for p in ps]
@@ -32,5 +32,28 @@ if Pkg.installed("Polynomial") !== nothing
 
 	function plot(p::Poly, options=Dict())
 		return plot([p], options)
+	end
+end
+
+if Pkg.installed("TimeSeries") !== nothing
+	import TimeSeries: TimeArray, timestamp, values, colnames
+
+	function plot(ts::TimeArray, options=Dict())
+		data = [
+			["x"=>map(t->"$t", timestamp(ts[col])), "y"=>values(ts[col]), "type"=>"scatter", "mode"=>"lines", "name"=>col]
+			for col in colnames(ts)
+		]
+		return plot([data], options)
+	end
+end
+
+if Pkg.installed("WAV") !== nothing
+	function plot{T<:Number,U<:Number,V<:Number}(wav::(Array{T,2},U,V,UnionType), options=Dict())
+		opt = merge(["layout"=>["xaxis"=>["title"=>"seconds","dtick"=>1,"tick0"=>0,"autotick"=>false]]], options)
+		w, Fs = wav
+		X = [f/Fs for f in 1.0:length(w)]
+		Y = [round(y,8) for y in w]
+		data = [["x"=>X, "y"=>Y, "type"=>"scatter", "mode"=>"lines", "name"=>"WAV data"]]
+		return plot([data], opt)
 	end
 end
