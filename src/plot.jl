@@ -61,11 +61,26 @@ end
 if Pkg.installed("DataFrames") !== nothing
 	import DataFrames: DataFrame
 
-	function plot(dfxy::(DataFrame,Union(Symbol,Number),Union(Symbol,Number)), options=Dict())
-		df, x, y = dfxy
-		X = df[x]
-		Y = df[y]
-		data = [["x"=>X, "y"=>Y, "type"=>"scatter", "mode"=>"markers"]]
+	function plot(dfxs::(DataFrame,Array{Symbol,1}), options=Dict())
+		df, xs = dfxs
+		data = [["x"=>df[x], "type"=>"histogram", "opacity"=>0.75, "name"=>"$x"] for x in xs]
 		return plot([data], options)
+	end
+
+	function plot(dfx::(DataFrame,Symbol), options=Dict())
+		df, x = dfx
+		return plot((df, [x]), options)
+	end
+
+	function plot(dfxys::(DataFrame,Symbol,Array{Symbol,1}), options=Dict())
+		df, x, ys = dfxys
+		X = df[x]
+		data = [["x"=>X, "y"=>df[y], "type"=>"scatter", "mode"=>"markers", "name"=>"$y"] for y in ys]
+		return plot([data], options)
+	end
+
+	function plot(dfxy::(DataFrame,Symbol,Symbol), options=Dict())
+		df, x, y = dfxy
+		return plot((df, x, [y]), options)
 	end
 end
