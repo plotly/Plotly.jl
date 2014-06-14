@@ -43,10 +43,17 @@ You can also just call `plot` by itself, and you'll get a String that's the url 
 ## Plot Functions and Polynomials
     julia> Plotly.plot(abs)
     julia> Plotly.plot([sqrt, log], ["left"=>10, "right"=>20, "step"=>0.1])
+    julia> Plotly.plot() do x
+           savings = 3000
+           income = x*1000
+           expenses = x*800
+           return savings+income-expenses
+           end
 
 You can now plot functions directly.
 The first line shows how to plot the absolute value function, and the second line plots
 the square root and logarithm functions, both from 10 to 20 at increments of 0.1.
+The last line shows how to use Julia's `do` syntax to plot complicated anonymous functions.
 
     julia> using Polynomial
     julia> x = Poly([1,0])
