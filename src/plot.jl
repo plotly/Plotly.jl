@@ -10,7 +10,7 @@ function get_points(f::Function, options=Dict())
 		Y[i] = round(y, 8)
 	end
 
-	return ["x"=>X, "y"=>Y, "type"=>"scatter", "mode"=>"lines", "name"=>opt["name"]]
+	return ["x"=>X, "y"=>Y, "type"=>"scatter", "name"=>opt["name"]]
 end
 
 function plot(fs::Array{Function,1}, options=Dict())
@@ -40,7 +40,7 @@ if Pkg.installed("TimeSeries") !== nothing
 
 	function plot(ts::TimeArray, options=Dict())
 		data = [
-			["x"=>map(t->"$t", timestamp(ts[col])), "y"=>values(ts[col]), "type"=>"scatter", "mode"=>"lines", "name"=>col]
+			["x"=>map(t->"$t", timestamp(ts[col])), "y"=>values(ts[col]), "type"=>"scatter", "name"=>col]
 			for col in colnames(ts)
 		]
 		return plot([data], options)
@@ -55,5 +55,17 @@ if Pkg.installed("WAV") !== nothing
 		Y = [round(y,8) for y in w]
 		data = [["x"=>X, "y"=>Y, "type"=>"scatter", "mode"=>"lines", "name"=>"WAV data"]]
 		return plot([data], opt)
+	end
+end
+
+if Pkg.installed("DataFrames") !== nothing
+	import DataFrames: DataFrame
+
+	function plot(dfxy::(DataFrame,Union(Symbol,Number),Union(Symbol,Number)), options=Dict())
+		df, x, y = dfxy
+		X = df[x]
+		Y = df[y]
+		data = [["x"=>X, "y"=>Y, "type"=>"scatter", "mode"=>"markers"]]
+		return plot([data], options)
 	end
 end

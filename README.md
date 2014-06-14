@@ -59,18 +59,25 @@ The last line shows how to use Julia's `do` syntax to plot complicated anonymous
     julia> x = Poly([1,0])
     julia> Plotly.plot(3x^3 + 2x^2 - x + 1)
 
-If you have the Polynomial package installed, you can plot them directly the same way as math functions.
+Using the Polynomial package, you can plot polynomials directly the same way as math functions.
     
-## Plot TimeSeries
+## Plot DataFrames and TimeSeries
+    julia> using DataFrames
+    julia> df = readtable("height_vs_weight.csv")
+    julia> Plotly.plot((df, :height, :weight))
+
+Using the DataFrames package, you can read CSV data and plot it directly by pass a tuple `(df, x, y)`, where `x` and `y`
+are symbols refering to columns to use for the x-axis and y-axis.
+
     julia> using TimeSeries
     julia> d = [date(2012,5,29):date(2013,5,29)]
     julia> t = TimeArray(d, rand(length(d),2), ["foo","bar"])
     julia> Plotly.plot(t)
 
-If you have the TimeSeries package installed, you can plot them directly by passing a TimeArray argument.
+Using the TimeSeries package, you can plot them directly by passing a TimeArray argument.
 
 ## Plot WAV Files
     julia> using WAV
     julia> Plotly.plot(wavread("filename.wav"))
 
-If you have the WAV package installed, you can plot WAV files by passing a call to the wavread function.
+Using the WAV package, you can plot WAV files by passing a call to the `wavread` function.
