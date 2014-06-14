@@ -58,6 +58,7 @@ The last line shows how to use Julia's `do` syntax to plot complicated anonymous
     julia> using Polynomial
     julia> x = Poly([1,0])
     julia> Plotly.plot(3x^3 + 2x^2 - x + 1)
+    julia> Plotly.plot([x, 2x, 3x^2-x])
 
 Using the Polynomial package, you can plot polynomials directly the same way as math functions.
     
