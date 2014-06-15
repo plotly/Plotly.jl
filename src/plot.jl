@@ -61,17 +61,21 @@ end
 if Pkg.installed("DataFrames") !== nothing
 	import DataFrames: DataFrame
 
-	function plot(dfxs::(DataFrame,Array{Symbol,1}), options=Dict())
-		df, xs = dfxs
-		data = [["x"=>df[x], "type"=>"histogram", "opacity"=>0.75, "name"=>"$x"] for x in xs]
+	# plot((df, [:y1, :y2, ...])) --> box plots
+	function plot(dfys::(DataFrame,Array{Symbol,1}), options=Dict())
+		df, ys = dfys
+		data = [["y"=>df[y], "type"=>"box", "name"=>"$y"] for y in ys]
 		return plot([data], options)
 	end
 
+	# plot((df, :x)) --> histogram
 	function plot(dfx::(DataFrame,Symbol), options=Dict())
 		df, x = dfx
-		return plot((df, [x]), options)
+		data = [["x"=>df[x], "type"=>"histogram", "name"=>"$x"]]
+		return plot([data], options)
 	end
 
+	# plot((df, :x, [:y1, :y2, ...])) --> scatter plots
 	function plot(dfxys::(DataFrame,Symbol,Array{Symbol,1}), options=Dict())
 		df, x, ys = dfxys
 		X = df[x]
@@ -79,8 +83,22 @@ if Pkg.installed("DataFrames") !== nothing
 		return plot([data], options)
 	end
 
+	# plot((df, :x, :y)) --> scatter plot
 	function plot(dfxy::(DataFrame,Symbol,Symbol), options=Dict())
 		df, x, y = dfxy
 		return plot((df, x, [y]), options)
+	end
+
+	# Sane, Generic DataFrame plot
+	function plot(df::DataFrame, options=Dict())
+		if haskey(options, "xs") && haskey(options, "ys")
+			return plot((df, options["xs"], options["ys"]))
+		elseif haskey(options, "xs")
+			return plot((df, options["xs"]))
+		elseif haskey(options, "ys")
+			return plot((df, options["ys"]))
+		else
+			return ["error"=>"Please set the xs and/or ys options."]
+		end
 	end
 end
