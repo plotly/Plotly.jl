@@ -1,5 +1,7 @@
 #A Julia interface to the plot.ly API
 
+[![Build Status](https://travis-ci.org/snotskie/Plotly.jl.png)](https://travis-ci.org/snotskie/Plotly.jl)
+
 Forked from [astrieanna/Plotly.jl](https://github.com/astrieanna/Plotly.jl)
 
 README quickly to get started. Alternately, checkout out the pretty Julia docs at http://plot.ly/api
