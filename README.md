@@ -67,7 +67,7 @@ Using the Polynomial package, you can plot polynomials directly the same way as 
     julia> df = readtable("height_vs_weight.csv")
     julia> Plotly.plot(df, ["xs"=>:height, "ys"=>:weight])
 
-Using the DataFrames package, you can read CSV data and plot it directly by passing the data frame and setting the xs and/or ys options. These are symbols or arrays of symbols refering to columns to use axes.
+Using the DataFrames package, you can read CSV data and plot it directly by passing the data frame and setting the xs and/or ys options. These are symbols or arrays of symbols refering to columns names in the CSV file.
 
     julia> using TimeSeries
     julia> d = [date(2012,5,29):date(2013,5,29)]
