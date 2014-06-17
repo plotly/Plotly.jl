@@ -19,3 +19,14 @@ style_res = Plotly.style(datastyle)
 layout_res = Plotly.layout(["title"=>"Hello World"])
 @test layout_res["error"] == ""
 
+# just check that these won't raise an error
+trace1 = Plotly.line(sin, ["left"=>0, "right"=>10, "step"=>1])
+trace2 = Plotly.histogram(cos, ["left"=>0, "right"=>10, "step"=>1])
+trace3 = Plotly.box(abs, ["left"=>0, "right"=>10, "step"=>1])
+trace4 = Plotly.scatter(log, ["left"=>0, "right"=>10, "step"=>1])
+response = Plotly.plot([trace1, trace2, trace3, trace4])
+@test response["error"] == ""
+
+# and one last check
+response = Plotly.plot([sin, cos, abs, log], ["left"=>eps(), "right"=>10, "step"=>1])
+@test response["error"] == ""
