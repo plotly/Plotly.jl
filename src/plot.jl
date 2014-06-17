@@ -80,42 +80,56 @@ end
 if Pkg.installed("DataFrames") !== nothing
 	import DataFrames: DataFrame
 
-	# plot((df, [:y1, :y2, ...])) --> box plots
-	function plot(dfys::(DataFrame,Array{Symbol,1}), options=Dict())
-		df, ys = dfys
-		data = [["y"=>df[y], "type"=>"box", "name"=>"$y"] for y in ys]
-		return plot([data], options)
+	scatter(df::DataFrame, options=Dict())   = get_points(df, merge(["type"=>"scatter","mode"=>"markers","xs"=>:x,"ys"=>:y], options))
+	line(df::DataFrame, options=Dict())      = get_points(df, merge(["type"=>"scatter","mode"=>"lines","xs"=>:x,"ys"=>:y], options))
+	box(df::DataFrame, options=Dict())       = get_points(df, merge(["type"=>"box","ys"=>:y], options))
+	histogram(df::DataFrame, options=Dict()) = get_points(df, merge(["type"=>"histogram","xs"=>:x], options))
+	function get_points(df::DataFrame, options=Dict())
+		default = ["type"=>"scatter", "mode"=>"lines", "___"=>:___]
+		opt = merge(default, options)
+		for axis in ["xs", "ys"]
+			if  haskey(opt, axis) && typeof(opt[axis]) <: Symbol
+				opt[axis] = [opt[axis]]
+			end
+		end
+
+		if haskey(opt, "xs") && haskey(opt, "ys")
+			if length(opt["xs"]) == length(opt["ys"])
+				return [
+					["x"=>df[opt["xs"][i]], "y"=>df[opt["ys"][i]], "type"=>opt["type"], "mode"=>opt["mode"]]
+					for i in 1:length(opt["xs"])
+				]
+			else
+				return [
+					[
+						["x"=>df[x], "y"=>df[y], "type"=>opt["type"], "mode"=>opt["mode"]]
+						for x in opt["xs"]
+					]
+					for y in opt["ys"]
+				]
+			end
+		elseif haskey(opt, "xs")
+			return [
+				["x"=>df[x], "type"=>opt["type"], "mode"=>opt["mode"]]
+				for x in opt["xs"]
+			]
+		elseif haskey(opt, "ys")
+			return [
+				["y"=>df[y], "type"=>opt["type"], "mode"=>opt["mode"]]
+				for y in opt["ys"]
+			]
+		else
+			return ["error"=>"Please set the xs and/or ys options."]
+		end
 	end
 
-	# plot((df, :x)) --> histogram
-	function plot(dfx::(DataFrame,Symbol), options=Dict())
-		df, x = dfx
-		data = [["x"=>df[x], "type"=>"histogram", "name"=>"$x"]]
-		return plot([data], options)
-	end
-
-	# plot((df, :x, [:y1, :y2, ...])) --> scatter plots
-	function plot(dfxys::(DataFrame,Symbol,Array{Symbol,1}), options=Dict())
-		df, x, ys = dfxys
-		X = df[x]
-		data = [["x"=>X, "y"=>df[y], "type"=>"scatter", "mode"=>"markers", "name"=>"$y"] for y in ys]
-		return plot([data], options)
-	end
-
-	# plot((df, :x, :y)) --> scatter plot
-	function plot(dfxy::(DataFrame,Symbol,Symbol), options=Dict())
-		df, x, y = dfxy
-		return plot((df, x, [y]), options)
-	end
-
-	# Sane, Generic DataFrame plot
 	function plot(df::DataFrame, options=Dict())
 		if haskey(options, "xs") && haskey(options, "ys")
-			return plot((df, options["xs"], options["ys"]))
+			return plot([scatter(df)], options)
 		elseif haskey(options, "xs")
-			return plot((df, options["xs"]))
+			return plot([histogram(df)], options)
 		elseif haskey(options, "ys")
-			return plot((df, options["ys"]))
+			return plot([box(df)], options)
 		else
 			return ["error"=>"Please set the xs and/or ys options."]
 		end
