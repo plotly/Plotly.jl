@@ -20,10 +20,21 @@ function get_points(f::Function, options=Dict())
 	end
 end
 
+scatter(f::Array, options=Dict())        = {"type"=>"scatter","mode"=>"markers", "x"=>[1:length(f)], "y"=>f}
+line(f::Array, options=Dict())           = {"type"=>"scatter","mode"=>"lines", "x"=>[1:length(f)], "y"=>f}
+box(f::Array, options=Dict())            = {"type"=>"box", "x"=>[1:length(f)], "y"=>f}
+histogram(f::Array, options=Dict())      = {"type"=>"histogram", "x"=>[1:length(f)], "y"=>f}
+
+scatter(f::Dict, options=Dict())        = {"type"=>"scatter","mode"=>"markers", "x"=>[k for k in keys(f)], "y"=>[v for v in Base.values(f)]}
+line(f::Dict, options=Dict())           = {"type"=>"scatter","mode"=>"lines", "x"=>[k for k in keys(f)], "y"=>[v for v in Base.values(f)]}
+box(f::Dict, options=Dict())            = {"type"=>"box", "x"=>[k for k in keys(f)], "y"=>[v for v in Base.values(f)]}
+histogram(f::Dict, options=Dict())      = {"type"=>"histogram", "x"=>[k for k in keys(f)], "y"=>[v for v in Base.values(f)]}
+
 scatter(f::Function, options=Dict())        = get_points(f, merge({"type"=>"scatter","mode"=>"markers"}, options))
 line(f::Function, options=Dict())           = get_points(f, merge({"type"=>"scatter","mode"=>"lines"}, options))
 box(f::Function, options=Dict())            = get_points(f, merge({"type"=>"box"}, options))
 histogram(f::Function, options=Dict())      = get_points(f, merge({"type"=>"histogram"}, options))
+
 plot(f::Function, options=Dict())           = plot([line(f, options)])
 plot(fs::Array{Function,1}, options=Dict()) = plot([line(f, options) for f in fs])
 

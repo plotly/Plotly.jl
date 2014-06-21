@@ -106,6 +106,15 @@ julia> Plotly.plot(wavread("filename.wav"))
 Using the WAV package, you can plot WAV files by passing a call to the `wavread` function.
 
 # Detailed Plotting
+## Arrays and Dicts
+```julia
+julia> trace1 = Plotly.line([3x for x in 1:1000])
+julia> trace2 = Plotly.histogram([3x for x in 1:1000])
+julia> trace3 = Plotly.scatter([2x => 3x for x in 1:1000])
+julia> trace4 = Plotly.box([2x => 3x for x in 1:1000])
+julia
+```
+
 ## Functions and Polynomials
 ```julia
 julia> trace1 = Plotly.line(abs, ["left"=>10, "right"=>20, "step"=>0.1])
