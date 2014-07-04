@@ -23,17 +23,20 @@ end
 scatter(f::Array, options=Dict())        = {"type"=>"scatter","mode"=>"markers", "x"=>[1:length(f)], "y"=>f}
 line(f::Array, options=Dict())           = {"type"=>"scatter","mode"=>"lines", "x"=>[1:length(f)], "y"=>f}
 box(f::Array, options=Dict())            = {"type"=>"box", "x"=>[1:length(f)], "y"=>f}
-histogram(f::Array, options=Dict())      = {"type"=>"histogram", "x"=>[1:length(f)], "y"=>f}
+histogram(f::Array, options=Dict())      = {"type"=>"histogram", "y"=>[1:length(f)], "x"=>f}
+bar(f::Array, options=Dict())            = {"type"=>"bar", "x"=>[1:length(f)], "y"=>f}
 
 scatter(f::Dict, options=Dict())        = {"type"=>"scatter","mode"=>"markers", "x"=>[k for k in keys(f)], "y"=>[v for v in Base.values(f)]}
 line(f::Dict, options=Dict())           = {"type"=>"scatter","mode"=>"lines", "x"=>[k for k in keys(f)], "y"=>[v for v in Base.values(f)]}
 box(f::Dict, options=Dict())            = {"type"=>"box", "x"=>[k for k in keys(f)], "y"=>[v for v in Base.values(f)]}
 histogram(f::Dict, options=Dict())      = {"type"=>"histogram", "x"=>[k for k in keys(f)], "y"=>[v for v in Base.values(f)]}
+bar(f::Dict, options=Dict())            = {"type"=>"bar", "x"=>[k for k in keys(f)], "y"=>[v for v in Base.values(f)]}
 
 scatter(f::Function, options=Dict())        = get_points(f, merge({"type"=>"scatter","mode"=>"markers"}, options))
 line(f::Function, options=Dict())           = get_points(f, merge({"type"=>"scatter","mode"=>"lines"}, options))
 box(f::Function, options=Dict())            = get_points(f, merge({"type"=>"box"}, options))
 histogram(f::Function, options=Dict())      = get_points(f, merge({"type"=>"histogram"}, options))
+bar(f::Function, options=Dict())            = get_points(f, merge({"type"=>"bar"}, options))
 
 plot(f::Function, options=Dict())           = plot([line(f, options)])
 plot(fs::Array{Function,1}, options=Dict()) = plot([line(f, options) for f in fs])
@@ -45,6 +48,7 @@ if Pkg.installed("Polynomial") !== nothing
 	line(p::Poly, options=Dict())      = line(x->polyval(p,x), options)
 	box(p::Poly, options=Dict())       = box(x->polyval(p,x), options)
 	histogram(p::Poly, options=Dict()) = histogram(x->polyval(p,x), options)
+	bar(p::Poly, options=Dict())       = bar(x->polyval(p,x), options)
 
 	function plot{T<:Number}(ps::Array{Poly{T},1}, options=Dict())
 		data = [get_points(x->polyval(p,x), merge({"name"=>"$p"}, options)) for p in ps]
@@ -67,6 +71,7 @@ if Pkg.installed("TimeSeries") !== nothing
 	line(ts::TimeArray, options=Dict())      = [merge(x,{"type"=>"line","mode"=>"lines"}) for x in scatter(ts)]
 	box(ts::TimeArray, options=Dict())       = [merge(x,{"type"=>"box"}) for x in scatter(ts)]
 	histogram(ts::TimeArray, options=Dict()) = [merge(x,{"type"=>"histogram"}) for x in scatter(ts)]
+	bar(ts::TimeArray, options=Dict())       = [merge(x,{"type"=>"bar"}) for x in scatter(ts)]
 	plot(ts::TimeArray, options=Dict())      = plot([line(ts)], options)
 end
 
@@ -81,6 +86,7 @@ if Pkg.installed("WAV") !== nothing
 	scatter{T<:Number,U<:Number,V<:Number}(wav::(Array{T,2},U,V,UnionType), options=Dict())   = merge(line(wav),{"type"=>"scatter","mode"=>"markers"})
 	box{T<:Number,U<:Number,V<:Number}(wav::(Array{T,2},U,V,UnionType), options=Dict())       = merge(line(wav),{"type"=>"box"})
 	histogram{T<:Number,U<:Number,V<:Number}(wav::(Array{T,2},U,V,UnionType), options=Dict()) = merge(line(wav),{"type"=>"histogram"})
+	bar{T<:Number,U<:Number,V<:Number}(wav::(Array{T,2},U,V,UnionType), options=Dict())       = merge(line(wav),{"type"=>"bar"})
 
 	function plot{T<:Number,U<:Number,V<:Number}(wav::(Array{T,2},U,V,UnionType), options=Dict())
 		opt = merge({"layout"=>{"xaxis"=>{"title"=>"seconds","dtick"=>1,"tick0"=>0,"autotick"=>false}}}, options)
@@ -95,6 +101,7 @@ if Pkg.installed("DataFrames") !== nothing
 	line(df::DataFrame, options=Dict())      = get_points(df, merge({"type"=>"scatter","mode"=>"lines"}, options))
 	box(df::DataFrame, options=Dict())       = get_points(df, merge({"type"=>"box"}, options))
 	histogram(df::DataFrame, options=Dict()) = get_points(df, merge({"type"=>"histogram"}, options))
+	bar(df::DataFrame, options=Dict())       = get_points(df, merge({"type"=>"bar"}, options))
 	function get_points(df::DataFrame, options=Dict())
 		default = {"type"=>"scatter", "mode"=>"lines"}
 		opt = merge(default, options)
