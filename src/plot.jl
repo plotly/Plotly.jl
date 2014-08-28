@@ -26,11 +26,11 @@ box(f::Array, options=Dict())            = {"type"=>"box", "x"=>[1:length(f)], "
 histogram(f::Array, options=Dict())      = {"type"=>"histogram", "y"=>[1:length(f)], "x"=>f}
 bar(f::Array, options=Dict())            = {"type"=>"bar", "x"=>[1:length(f)], "y"=>f}
 
-scatter(f::Dict, options=Dict())        = {"type"=>"scatter","mode"=>"markers", "x"=>[k for k in keys(f)], "y"=>[v for v in Base.values(f)]}
-line(f::Dict, options=Dict())           = {"type"=>"scatter","mode"=>"lines", "x"=>[k for k in keys(f)], "y"=>[v for v in Base.values(f)]}
-box(f::Dict, options=Dict())            = {"type"=>"box", "x"=>[k for k in keys(f)], "y"=>[v for v in Base.values(f)]}
-histogram(f::Dict, options=Dict())      = {"type"=>"histogram", "x"=>[k for k in keys(f)], "y"=>[v for v in Base.values(f)]}
-bar(f::Dict, options=Dict())            = {"type"=>"bar", "x"=>[k for k in keys(f)], "y"=>[v for v in Base.values(f)]}
+scatter(f::Dict, options=Dict())        = {"type"=>"scatter","mode"=>"markers", "x"=>[k for k in sort(collect(keys(f)))], "y"=>[f[k] for k in sort(collect(keys(f)))]}
+line(f::Dict, options=Dict())           = {"type"=>"scatter","mode"=>"lines", "x"=>[k for k in sort(collect(keys(f)))], "y"=>[f[k] for k in sort(collect(keys(f)))]}
+box(f::Dict, options=Dict())            = {"type"=>"box", "x"=>[k for k in sort(collect(keys(f)))], "y"=>[f[k] for k in sort(collect(keys(f)))]}
+histogram(f::Dict, options=Dict())      = {"type"=>"histogram", "x"=>[k for k in sort(collect(keys(f)))], "y"=>[f[k] for k in sort(collect(keys(f)))]}
+bar(f::Dict, options=Dict())            = {"type"=>"bar", "x"=>[k for k in sort(collect(keys(f)))], "y"=>[f[k] for k in sort(collect(keys(f)))]}
 
 scatter(f::Function, options=Dict())        = get_points(f, merge({"type"=>"scatter","mode"=>"markers"}, options))
 line(f::Function, options=Dict())           = get_points(f, merge({"type"=>"scatter","mode"=>"lines"}, options))
