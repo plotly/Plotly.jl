@@ -13,9 +13,9 @@ type CurrentPlot
     url::String
 end
 
-default_options = ["filename"=>"Plot from Julia API",
+default_options = {"filename"=>"Plot from Julia API",
 "world_readable"=> true,
-"layout"=>[""=>""]]
+"layout"=>{""=>""}}
 
 ## Taken from https://github.com/johnmyleswhite/Vega.jl/blob/master/src/Vega.jl#L51
 # Open a URL in a browser
@@ -25,16 +25,16 @@ function openurl(url::String)
     @linux_only run(`xdg-open $url`)
 end
 
-default_opts = [ 
+default_opts = {
 "origin" => "plot",
 "platform" => "Julia",
-"version" => "0.2"]
+"version" => "0.2"}
 
 function signup(username::String, email::String)
     r = HTTPClient.HTTPC.post("http://plot.ly/apimkacct", 
     merge(default_opts, 
-    ["un" => username, 
-    "email" => email]))
+    {"un" => username, 
+    "email" => email}))
     if r.http_code == 200
         results = JSON.parse(bytestring(r.body)) 
         for flag in ["error","warning","message"]
@@ -63,10 +63,10 @@ function plot(data::Array,options=Dict())
     opt = merge(default_options,options)
     r = HTTPClient.HTTPC.post("http://plot.ly/clientresp", 
     merge(default_opts,
-    ["un" => plotlyaccount.username,
+    {"un" => plotlyaccount.username,
     "key" => plotlyaccount.api_key,
     "args" => json(data),
-    "kwargs" => json(opt)]))
+    "kwargs" => json(opt)}))
     body=JSON.parse(bytestring(r.body))
     if r.http_code != 200
         error(["r.http_code"])
@@ -92,11 +92,11 @@ function layout(layout_opts::Dict,meta_opts=Dict())
 
     r = HTTPClient.HTTPC.post("http://plot.ly/clientresp",
     merge(default_opts,
-    ["un" => plotlyaccount.username,
+    {"un" => plotlyaccount.username,
     "key" => plotlyaccount.api_key,
     "args" => json(layout_opts),
     "origin" => "layout",
-    "kwargs" => json(meta_opts)]))
+    "kwargs" => json(meta_opts)}))
     __parseresponse(r)
 end
 
@@ -111,11 +111,11 @@ function style(style_opts,meta_opts=Dict())
 
     r = HTTPClient.HTTPC.post("http://plot.ly/clientresp",
     merge(default_opts,
-    ["un" => plotlyaccount.username,
+    {"un" => plotlyaccount.username,
     "key" => plotlyaccount.api_key,
     "args" => json([style_opts]),
     "origin" => "style",
-    "kwargs" => json(meta_opts)]))
+    "kwargs" => json(meta_opts)}))
     __parseresponse(r)
 end
 
@@ -148,9 +148,9 @@ end
 
 function get_template(format_type::String)
     if format_type == "layout" 
-        return [
+        return {
                 "title"=>"Click to enter Plot title",
-                "xaxis"=>[
+                "xaxis"=>{
                         "range"=>[-1,6],
                         "type"=>"-",
                         "mirror"=>true,
@@ -177,9 +177,9 @@ function get_template(format_type::String)
                         "zerolinewidth"=>1, 
                         "title"=>"Click to enter X axis title",
                         "unit"=>"", 
-                        "titlefont"=>["family"=>"","size"=>0,"color"=>""], 
-                        "tickfont"=>["family"=>"","size"=>0,"color"=>""]], 
-                "yaxis"=>[
+                        "titlefont"=>{"family"=>"","size"=>0,"color"=>""}, 
+                        "tickfont"=>{"family"=>"","size"=>0,"color"=>""}}, 
+                "yaxis"=>{
                         "range"=>[-1,4],
                         "type"=>"-",
                         "mirror"=>true,
@@ -206,18 +206,18 @@ function get_template(format_type::String)
                         "zerolinewidth"=>1, 
                         "title"=>"Click to enter Y axis title",
                         "unit"=>"", 
-                        "titlefont"=>["family"=>"","size"=>0,"color"=>""], 
-                        "tickfont"=>["family"=>"","size"=>0,"color"=>""]], 
-                "legend"=>[
+                        "titlefont"=>{"family"=>"","size"=>0,"color"=>""}, 
+                        "tickfont"=>{"family"=>"","size"=>0,"color"=>""}}, 
+                "legend"=>{
                         "bgcolor"=>"#fff", 
                         "bordercolor"=>"#000", 
                         "borderwidth"=>1, 
-                        "font"=>["family"=>"","size"=>0,"color"=>""], 
-                        "traceorder"=>"normal"],
+                        "font"=>{"family"=>"","size"=>0,"color"=>""}, 
+                        "traceorder"=>"normal"},
                 "width"=>700,
                 "height"=>450,
                 "autosize"=>"initial", 
-                "margin"=>["l"=>80,"r"=>80,"t"=>80,"b"=>80,"pad"=>2],
+                "margin"=>{"l"=>80,"r"=>80,"t"=>80,"b"=>80,"pad"=>2},
                 "paper_bgcolor"=>"#fff",
                 "plot_bgcolor"=>"#fff",
                 "barmode"=>"stack",
@@ -226,10 +226,10 @@ function get_template(format_type::String)
                 "boxmode"=>"overlay",
                 "boxgap"=>0.3,
                 "boxgroupgap"=>0.3,
-                "font"=>["family"=>"Arial, sans-serif;","size"=>12,"color"=>"#000"],
-                "titlefont"=>["family"=>"","size"=>0,"color"=>""],
+                "font"=>{"family"=>"Arial, sans-serif;","size"=>12,"color"=>"#000"},
+                "titlefont"=>{"family"=>"","size"=>0,"color"=>""},
                 "dragmode"=>"zoom",
-                "hovermode"=>"x"]
+                "hovermode"=>"x"}
     end
 end
 
