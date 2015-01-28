@@ -23,10 +23,7 @@ INFO: No packages to install, update or remove.
 You'll need to create a plot.ly account and find out your API key before you'll be able to use this package.
 
 ## New user signup
-```julia
-julia> Plotly.signup("username","email")
-Success! Check your email to activate account.
-```
+Find your username and API key in the [Plotly settings](https://plot.ly/settings).
 
 ## Signin
 ```julia
