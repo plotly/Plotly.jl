@@ -1,8 +1,6 @@
 # A Julia interface to the plot.ly API
 
-[![Build Status](https://travis-ci.org/snotskie/Plotly.jl.png)](https://travis-ci.org/snotskie/Plotly.jl)
-
-Forked from [astrieanna/Plotly.jl](https://github.com/astrieanna/Plotly.jl)
+[![Build Status](https://travis-ci.org/plotly/Plotly-Julia.svg)](https://travis-ci.org/plotly/Plotly-Julia)
 
 README quickly to get started. Alternately, checkout out the pretty Julia docs at http://plot.ly/api
 
@@ -30,7 +28,7 @@ julia> Plotly.signup("username","email")
 Success! Check your email to activate account.
 ```
 
-## Signin 
+## Signin
 ```julia
 julia> Plotly.signin("username","your api key")
 PlotlyAccount("username","your api key")
@@ -78,7 +76,7 @@ julia> Plotly.plot([x, 2x, 3x^2-x])
 ```
 
 Using the Polynomial package, you can plot polynomials directly the same way as math functions.
-    
+
 ## DataFrames and TimeSeries
 ```julia
 julia> using DataFrames
@@ -129,7 +127,7 @@ julia> trace1 = Plotly.line(3x^3 + 2x^2 - x + 1)
 julia> trace2 = Plotly.histogram(3x^3 + 2x^2 - x + 1)
 julia> Plotly.plot([trace1, trace2])
 ```
-    
+
 ## DataFrames and TimeSeries
 ```julia
 julia> using DataFrames
