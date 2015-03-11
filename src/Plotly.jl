@@ -122,6 +122,34 @@ function style(style_opts,meta_opts=Dict())
     __parseresponse(r)
 end
 
+
+function getFile(file_id::String, file_owner=None)
+  global plotlyaccount
+
+  user = plotlyaccount.username
+  apikey = plotlyaccount.api_key
+
+  if (file_owner == None)
+    file_owner = user
+  end
+
+  url = "https://api.plot.ly/v2/files/$file_owner:$file_id/content"
+  lib_version = string(default_opts["platform"], " ", default_opts["version"])
+
+  auth = string("Basic ", base64("$user:$apikey"))
+
+  options = RequestOptions(headers=[
+                                    ("Authorization", auth),
+                                    ("Plotly-Client-Platform", lib_version)
+                                    ])
+
+  r = get(url, options)
+
+  __parseresponse(r)
+
+end
+
+
 function get_required_params(required,opts)
     # Priority given to user-inputted opts, then currentplot
     result=Dict()
