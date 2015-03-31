@@ -84,7 +84,11 @@ function set_credentials_file(input_creds::Dict)
 # Save Plotly endpoint configuration as JSON key-value pairs in
 # userhome/.plotly/.credentials. This includes username and api_key.
 
-    prev_creds = get_credentials_file()
+    prev_creds = {}
+
+    try
+        prev_creds = get_credentials_file()
+    end
 
     # plotly credentials file
     userhome = get(ENV, "HOME", "")
@@ -99,7 +103,7 @@ function set_credentials_file(input_creds::Dict)
     end
 
     #merge input creds with prev creds
-    if prev_creds != nothing
+    if prev_creds != {}
         creds = merge(prev_creds, input_creds)
     else
         creds = input_creds
@@ -115,7 +119,11 @@ function set_config_file(input_config::Dict)
 # Save Plotly endpoint configuration as JSON key-value pairs in
 # userhome/.plotly/.config. This includes the plotly_domain, and plotly_api_domain.
 
-    prev_config = get_config_file()
+    prev_config = {}
+
+    try
+        prev_config = get_config_file()
+    end
 
     # plotly configuration file
     userhome = get(ENV, "HOME", "")
@@ -130,7 +138,7 @@ function set_config_file(input_config::Dict)
     end
 
     #merge input config with prev config
-    if prev_config != nothing
+    if prev_config != {}
         config = merge(prev_config, input_config)
     else
         config = input_config
@@ -158,6 +166,11 @@ function get_credentials_file()
 
     creds_file = open(plotly_credentials_file)
     creds = JSON.parse(creds_file)
+
+    if creds == nothing
+        creds = {}
+    end
+
     return creds
 end
 
@@ -177,6 +190,11 @@ function get_config_file()
 
     config_file = open(plotly_config_file)
     config = JSON.parse(config_file)
+
+    if config == nothing
+        config = {}
+    end
+
     return config
 end
 
