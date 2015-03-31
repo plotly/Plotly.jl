@@ -43,6 +43,8 @@ default_endpoints = {
 "api" => "https://api.plot.ly/v2"}
 
 function signin(username::String, api_key::String, endpoints=None)
+# Define session credentials/endpoint configuration, where endpoint is a Dict
+
     if endpoints != None
         base_domain = get(endpoints, "plotly_domain", default_endpoints["base"])
         api_domain = get(endpoints, "plotly_api_domain", default_endpoints["api"])
@@ -52,6 +54,8 @@ function signin(username::String, api_key::String, endpoints=None)
 end
 
 function get_credentials()
+# Return the session credentials if defined --> otherwise use .credentials specs
+
     if !isdefined(Plotly,:plotlycredentials)
         creds = get_credentials_file()
         try
@@ -69,6 +73,8 @@ function get_credentials()
 end
 
 function get_config()
+# Return the session configuration if defined --> otherwise use .config specs
+
     if !isdefined(Plotly,:plotlyconfig)
         config = get_config_file()
         base_domain = get(config, "plotly_domain", default_endpoints["base"])
