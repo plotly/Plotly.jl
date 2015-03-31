@@ -37,13 +37,18 @@ default_opts = {
 "platform" => "Julia",
 "version" => "0.2"}
 
+function signin(username::String, api_key::String, endpoints=None)
+    if endpoints != None
+        base_domain = get(endpoints, "plotly_domain", default_endpoints["base"])
+        api_domain = get(endpoints, "plotly_api_domain", default_endpoints["api"])
+        global plotlyconfig = PlotlyConfig(base_domain, api_domain)
+    end
+    global plotlycredentials = PlotlyCredentials(username, api_key)
+end
         end
     end
 end
 
-function signin(username::String, api_key::String)
-    global plotlyaccount
-    plotlyaccount = PlotlyAccount(username,api_key)
 end
 
 function set_credentials_file(input_creds::Dict)
