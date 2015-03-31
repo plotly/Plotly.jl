@@ -1,6 +1,7 @@
 module Plotly
 using HTTPClient.HTTPC
 using JSON
+using Debug
 
 type PlotlyAccount
     username::String
@@ -54,6 +55,68 @@ function signin(username::String, api_key::String)
     plotlyaccount = PlotlyAccount(username,api_key)
 end
 
+function set_credentials_file(input_creds::Dict)
+# Save Plotly endpoint configuration as JSON key-value pairs in
+# userhome/.plotly/.credentials. This includes username and api_key.
+
+    prev_creds = get_credentials_file()
+
+    # plotly credentials file
+    userhome = get(ENV, "HOME", "")
+    plotly_credentials_folder = joinpath(userhome, ".plotly_julia")
+    plotly_credentials_file = joinpath(plotly_credentials_folder, ".credentials")
+
+    #check to see if dir/file exists --> if not create it
+    try
+        mkdir(plotly_credential_folder)
+    catch err
+        isa(err, SystemError) || rethrow(err)
+    end
+
+    #merge input creds with prev creds
+    creds = merge(prev_creds, input_creds)
+
+    #write the json strings to the cred file
+    cred_file = open(plotly_credentials_file, "w")
+    write(cred_file, JSON.json(creds))
+    close(cred_file)
+end
+
+function set_config_file(input_config::Dict)
+# Save Plotly endpoint configuration as JSON key-value pairs in
+# userhome/.plotly/.config. This includes the plotly_domain, and plotly_api_domain.
+
+    prev_config = get_config_file()
+
+    # plotly configuration file
+    userhome = get(ENV, "HOME", "")
+    plotly_config_folder = joinpath(userhome, ".plotly_julia")
+    plotly_config_file = joinpath(plotly_config_folder, ".config")
+
+    #check to see if dir/file exists --> if not create it
+    try
+        mkdir(plotly_config_folder)
+    catch err
+        isa(err, SystemError) || rethrow(err)
+    end
+
+    #merge input config with prev config
+    config = merge(prev_config, input_config)
+
+    #write the json strings to the config file
+    config_file = open(plotly_config_file, "w")
+    write(config_file, JSON.json(config))
+    close(config_file)
+end
+
+function get_credentials_file()
+    return Dict()
+end
+
+function get_config_file()
+    return Dict()
+end
+
 function plot(data::Array,options=Dict())
     global plotlyaccount
     if !isdefined(Plotly,:plotlyaccount)
@@ -71,6 +134,7 @@ function plot(data::Array,options=Dict())
                     })
              )
     body=JSON.parse(bytestring(r.body))
+
     if r.http_code != 200
         error(["r.http_code"])
     elseif body["error"] != ""
