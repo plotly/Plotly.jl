@@ -184,17 +184,14 @@ function get_content_endpoint(file_id::String, owner::String)
 end
 
 function plot(data::Array,options=Dict())
-    global plotlyaccount
-    if !isdefined(Plotly,:plotlyaccount)
-        println("Please 'signin(username, api_key)' before proceeding. See http://plot.ly/API for help!")
-        return
-    end
+    creds = get_credentials()
+    endpoint = get_plot_endpoint()
     opt = merge(default_options,options)
-    r = post("http://plot.ly/clientresp",
+    r = post(endpoint,
              merge(default_opts,
                    {
-                    "un" => plotlyaccount.username,
-                    "key" => plotlyaccount.api_key,
+                    "un" => creds.username,
+                    "key" => creds.api_key,
                     "args" => json(data),
                     "kwargs" => json(opt)
                     })
@@ -215,18 +212,15 @@ end
 include("plot.jl")
 
 function layout(layout_opts::Dict,meta_opts=Dict())
-    global plotlyaccount
-    if !isdefined(Plotly,:plotlyaccount)
-        println("Please 'signin(username, api_key)' before proceeding. See http://plot.ly/API for help!")
-        return
-    end
+    creds = get_credentials()
+    endpoint = get_plot_endpoint()
 
     merge!(meta_opts,get_required_params(["filename","fileopt"],meta_opts))
 
-    r = post("http://plot.ly/clientresp",
+    r = post(endpoint,
     merge(default_opts,
-    {"un" => plotlyaccount.username,
-    "key" => plotlyaccount.api_key,
+    {"un" => creds.username,
+    "key" => creds.api_key,
     "args" => json(layout_opts),
     "origin" => "layout",
     "kwargs" => json(meta_opts)}))
@@ -234,15 +228,12 @@ function layout(layout_opts::Dict,meta_opts=Dict())
 end
 
 function style(style_opts,meta_opts=Dict())
-    global plotlyaccount
-    if !isdefined(Plotly,:plotlyaccount)
-        println("Please 'signin(username, api_key)' before proceeding. See http://plot.ly/API for help!")
-        return
-    end
+    creds = get_credentials()
+    endpoint = get_plot_endpoint()
 
     merge!(meta_opts,get_required_params(["filename","fileopt"],meta_opts))
 
-    r = post("http://plot.ly/clientresp",
+    r = post(endpoint,
     merge(default_opts,
     {"un" => plotlyaccount.username,
     "key" => plotlyaccount.api_key,
@@ -253,27 +244,26 @@ function style(style_opts,meta_opts=Dict())
 end
 
 
-function getFile(file_id::String, file_owner=None)
-  global plotlyaccount
+function getFile(file_id::String, owner=None)
+  creds = get_credentials()
+  username = creds.username
+  api_key = creds.api_key
 
-  user = plotlyaccount.username
-  apikey = plotlyaccount.api_key
-
-  if (file_owner == None)
-    file_owner = user
+  if (owner == None)
+    owner = username
   end
 
-  url = "https://api.plot.ly/v2/files/$file_owner:$file_id/content"
+  endpoint = get_content_endpoint(file_id, owner)
   lib_version = string(default_opts["platform"], " ", default_opts["version"])
 
-  auth = string("Basic ", base64("$user:$apikey"))
+  auth = string("Basic ", base64("$username:$api_key"))
 
   options = RequestOptions(headers=[
                                     ("Authorization", auth),
                                     ("Plotly-Client-Platform", lib_version)
                                     ])
 
-  r = get(url, options)
+  r = get(endpoint, options)
 
   __parseresponse(r)
 
