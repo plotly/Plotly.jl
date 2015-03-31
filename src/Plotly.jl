@@ -3,10 +3,6 @@ using HTTPClient.HTTPC
 using JSON
 using Debug
 
-type PlotlyAccount
-    username::String
-    api_key::String
-end
 
 type CurrentPlot
     filename::String
@@ -17,6 +13,16 @@ end
 default_options = {"filename"=>"Plot from Julia API",
 "world_readable"=> true,
 "layout"=>{""=>""}}
+
+type PlotlyCredentials
+    username::String
+    api_key::String
+end
+
+type PlotlyConfig
+    plotly_domain::String
+    plotly_api_domain::String
+end
 
 ## Taken from https://github.com/johnmyleswhite/Vega.jl/blob/master/src/Vega.jl#L51
 # Open a URL in a browser
