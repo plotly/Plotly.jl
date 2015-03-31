@@ -3,6 +3,7 @@ using HTTPClient.HTTPC
 using JSON
 using Debug
 
+include("plot.jl")
 
 type CurrentPlot
     filename::String
@@ -92,13 +93,17 @@ function set_credentials_file(input_creds::Dict)
 
     #check to see if dir/file exists --> if not create it
     try
-        mkdir(plotly_credential_folder)
+        mkdir(plotly_credentials_folder)
     catch err
         isa(err, SystemError) || rethrow(err)
     end
 
     #merge input creds with prev creds
-    creds = merge(prev_creds, input_creds)
+    if prev_creds != nothing
+        creds = merge(prev_creds, input_creds)
+    else
+        creds = input_creds
+    end
 
     #write the json strings to the cred file
     creds_file = open(plotly_credentials_file, "w")
@@ -125,7 +130,11 @@ function set_config_file(input_config::Dict)
     end
 
     #merge input config with prev config
-    config = merge(prev_config, input_config)
+    if prev_config != nothing
+        config = merge(prev_config, input_config)
+    else
+        config = input_config
+    end
 
     #write the json strings to the config file
     config_file = open(plotly_config_file, "w")
@@ -208,8 +217,6 @@ function plot(data::Array,options=Dict())
         body
     end
 end
-
-include("plot.jl")
 
 function layout(layout_opts::Dict,meta_opts=Dict())
     creds = get_credentials()
