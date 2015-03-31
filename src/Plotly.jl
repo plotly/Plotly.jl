@@ -77,9 +77,9 @@ function set_credentials_file(input_creds::Dict)
     creds = merge(prev_creds, input_creds)
 
     #write the json strings to the cred file
-    cred_file = open(plotly_credentials_file, "w")
-    write(cred_file, JSON.json(creds))
-    close(cred_file)
+    creds_file = open(plotly_credentials_file, "w")
+    write(creds_file, JSON.json(creds))
+    close(creds_file)
 end
 
 function set_config_file(input_config::Dict)
@@ -110,11 +110,41 @@ function set_config_file(input_config::Dict)
 end
 
 function get_credentials_file()
-    return Dict()
+# Load user credentials as a Dict
+
+    # plotly credentials file
+    userhome = get(ENV, "HOME", "")
+    plotly_credentials_folder = joinpath(userhome, ".plotly_julia")
+    plotly_credentials_file = joinpath(plotly_credentials_folder, ".credentials")
+
+    if !isfile(plotly_credentials_file)
+        error(" No credentials file found. Please Set up your credentials
+        file by running set_credentials_file({\"username\": \"your_plotly_username\", ...
+        \"api_key\": \"your_plotly_api_key\"})")
+    end
+
+    creds_file = open(plotly_credentials_file)
+    creds = JSON.parse(creds_file)
+    return creds
 end
 
 function get_config_file()
-    return Dict()
+# Load endpoint configuration as a Dict
+
+    # plotly configuration file
+    userhome = get(ENV, "HOME", "")
+    plotly_config_folder = joinpath(userhome, ".plotly_julia")
+    plotly_config_file = joinpath(plotly_config_folder, ".config")
+
+    if !isfile(plotly_config_file)
+        error(" No configuration file found. Please Set up your configuration
+        file by running set_config_file({\"plotly_domain\": \"your_plotly_domain\", ...
+        \"plotly_api_domain\": \"your_plotly_api_domain\"})")
+    end
+
+    config_file = open(plotly_config_file)
+    config = JSON.parse(config_file)
+    return config
 end
 
 function plot(data::Array,options=Dict())
