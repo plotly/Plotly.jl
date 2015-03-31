@@ -138,7 +138,7 @@ function get_credentials_file()
 
     # plotly credentials file
     userhome = get(ENV, "HOME", "")
-    plotly_credentials_folder = joinpath(userhome, ".plotly_julia")
+    plotly_credentials_folder = joinpath(userhome, ".plotly")
     plotly_credentials_file = joinpath(plotly_credentials_folder, ".credentials")
 
     if !isfile(plotly_credentials_file)
@@ -157,7 +157,7 @@ function get_config_file()
 
     # plotly configuration file
     userhome = get(ENV, "HOME", "")
-    plotly_config_folder = joinpath(userhome, ".plotly_julia")
+    plotly_config_folder = joinpath(userhome, ".plotly")
     plotly_config_file = joinpath(plotly_config_folder, ".config")
 
     if !isfile(plotly_config_file)
