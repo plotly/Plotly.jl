@@ -49,10 +49,34 @@ function signin(username::String, api_key::String, endpoints=None)
     end
     global plotlycredentials = PlotlyCredentials(username, api_key)
 end
+
+function get_credentials()
+    if !isdefined(Plotly,:plotlycredentials)
+        creds = get_credentials_file()
+        try
+            username = creds["username"]
+            api_key = creds["api_key"]
+            global plotlycredentials = PlotlyCredentials(username, api_key)
+        catch
+            error("Please 'signin(username, api_key)' before proceeding. See
+            http://plot.ly/API for help!")
         end
     end
+
+    # will persist for the remainder of the session
+    return plotlycredentials
 end
 
+function get_config()
+    if !isdefined(Plotly,:plotlyconfig)
+        config = get_config_file()
+        base_domain = get(config, "plotly_domain", default_endpoints["base"])
+        api_domain = get(config, "plotly_api_domain", default_endpoints["api"])
+        global plotlyconfig = PlotlyConfig(base_domain, api_domain)
+    end
+
+    # will persist for the remainder of the session
+    return plotlyconfig
 end
 
 function set_credentials_file(input_creds::Dict)
