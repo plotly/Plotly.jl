@@ -171,6 +171,18 @@ function get_config_file()
     return config
 end
 
+function get_plot_endpoint()
+    config = get_config()
+    plot_endpoint = "clientresp"
+    return joinpath(config.plotly_domain, plot_endpoint)
+end
+
+function get_content_endpoint(file_id::String, owner::String)
+    config = get_config()
+    content_endpoint = "files/$owner:$file_id/content"
+    return joinpath(config.plotly_api_domain, content_endpoint)
+end
+
 function plot(data::Array,options=Dict())
     global plotlyaccount
     if !isdefined(Plotly,:plotlyaccount)
