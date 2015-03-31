@@ -63,7 +63,7 @@ function set_credentials_file(input_creds::Dict)
 
     # plotly credentials file
     userhome = get(ENV, "HOME", "")
-    plotly_credentials_folder = joinpath(userhome, ".plotly_julia")
+    plotly_credentials_folder = joinpath(userhome, ".plotly")
     plotly_credentials_file = joinpath(plotly_credentials_folder, ".credentials")
 
     #check to see if dir/file exists --> if not create it
@@ -90,7 +90,7 @@ function set_config_file(input_config::Dict)
 
     # plotly configuration file
     userhome = get(ENV, "HOME", "")
-    plotly_config_folder = joinpath(userhome, ".plotly_julia")
+    plotly_config_folder = joinpath(userhome, ".plotly")
     plotly_config_file = joinpath(plotly_config_folder, ".config")
 
     #check to see if dir/file exists --> if not create it
