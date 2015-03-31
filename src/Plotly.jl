@@ -31,21 +31,6 @@ default_opts = {
 "platform" => "Julia",
 "version" => "0.2"}
 
-function signup(username::String, email::String)
-    r = post("http://plot.ly/apimkacct",
-    merge(default_opts,
-    {"un" => username,
-    "email" => email}))
-    if r.http_code == 200
-        results = JSON.parse(bytestring(r.body))
-        for flag in ["error","warning","message"]
-            if haskey(results, flag) && results[flag] != ""
-                println(results[flag])
-            end
-        end
-        if haskey(results,"tmp_pw")
-            println("Success! Check your email to activate your account.")
-            results
         end
     end
 end
@@ -360,9 +345,6 @@ function get_template(format_type::String)
     end
 end
 
-function help(func_name::String)
-    print("hihi")
-end
 function help()
     println("Please enter the name of the funtion you'd like help with")
     println("Options include:")
@@ -370,9 +352,5 @@ function help()
     println("\t Plotly.help(\"layout\") OR Plotly.help(:layout)")
     println("\t Plotly.help(\"style\") OR Plotly.help(:style)")
 end
-function help(func_name::Symbol)
-    print("hihi")
-end
-
 
 end
