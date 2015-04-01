@@ -4,7 +4,7 @@ using Base.Test
 
 # just check that http://plot.ly/clientresp behaves as expected -- nothing to see here
 
-Plotly.signin("unittest","tfzz811f5n")
+Plotly.signin("unittest","tfzz811f5n", {"plotly_domain"=>"https://plot.ly","plotly_api_domain"=>"https://api.plot.ly"})
 
 (x0,y0) = [1,2,3], [4,5,6]
 (x1,y1) = [1,2,3], [2,10,12]
@@ -50,4 +50,4 @@ Plotly.signin("test_username", "test_api_key", endpoints)
 fid = "123_fake"
 owner = "test_owner"
 content_endpoint = Plotly.get_content_endpoint(fid, owner)
-@test content_endpoint == "my_plotly_api_domain/files/test_owner:123_fake/content"
+@test content_endpoint == "my_plotly_api_domain/v2/files/test_owner:123_fake/content"

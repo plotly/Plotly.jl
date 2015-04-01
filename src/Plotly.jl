@@ -11,6 +11,8 @@ type CurrentPlot
     url::String
 end
 
+api_version = "v2"
+
 default_options = {"filename"=>"Plot from Julia API",
 "world_readable"=> true,
 "layout"=>{""=>""}}
@@ -36,8 +38,11 @@ end
 
 function get_content_endpoint(file_id::String, owner::String)
     config = get_config()
-    content_endpoint = "files/$owner:$file_id/content"
-    return joinpath(config.plotly_api_domain, content_endpoint)
+    api_endpoint = "$(config.plotly_api_domain)/$api_version/files"
+    detail = "$owner:$file_id"
+    custom_action = "content"
+    content_endpoint = "$api_endpoint/$detail/$custom_action"
+    return content_endpoint
 end
 
 function plot(data::Array,options=Dict())
