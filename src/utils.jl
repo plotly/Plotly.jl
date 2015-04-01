@@ -17,12 +17,18 @@ end
 function signin(username::String, api_key::String, endpoints=None)
 # Define session credentials/endpoint configuration, where endpoint is a Dict
 
-    if endpoints != None
-        base_domain = get(endpoints, "plotly_domain", default_endpoints["base"])
-        api_domain = get(endpoints, "plotly_api_domain", default_endpoints["api"])
-        global plotlyconfig = PlotlyConfig(base_domain, api_domain)
-    end
     global plotlycredentials = PlotlyCredentials(username, api_key)
+
+    # if endpoints are specified both the base and api domains must be specified
+    if endpoints != None
+        try
+            base_domain = endpoints["plotly_domain"]
+            api_domain = endpoints["plotly_api_domain"]
+            global plotlyconfig = PlotlyConfig(base_domain, api_domain)
+        catch
+            error("You must specify both the base and api endpoints.")
+        end
+    end
 end
 
 function get_credentials()
