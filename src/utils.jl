@@ -35,11 +35,15 @@ function get_credentials()
 # Return the session credentials if defined --> otherwise use .credentials specs
 
     if !isdefined(Plotly,:plotlycredentials)
+
         creds = get_credentials_file()
+
         try
             username = creds["username"]
             api_key = creds["api_key"]
+
             global plotlycredentials = PlotlyCredentials(username, api_key)
+
         catch
             error("Please 'signin(username, api_key)' before proceeding. See
             http://plot.ly/API for help!")
@@ -54,10 +58,19 @@ function get_config()
 # Return the session configuration if defined --> otherwise use .config specs
 
     if !isdefined(Plotly,:plotlyconfig)
+
         config = get_config_file()
-        base_domain = get(config, "plotly_domain", default_endpoints["base"])
-        api_domain = get(config, "plotly_api_domain", default_endpoints["api"])
+
+        if isempty(config)
+            base_domain = default_endpoints["base"]
+            api_domain = default_endpoints["api"]
+        else
+            base_domain = get(config, "plotly_domain", default_endpoints["base"])
+            api_domain = get(config, "plotly_api_domain", default_endpoints["api"])
+        end
+
         global plotlyconfig = PlotlyConfig(base_domain, api_domain)
+
     end
 
     # will persist for the remainder of the session
@@ -68,26 +81,22 @@ function set_credentials_file(input_creds::Dict)
 # Save Plotly endpoint configuration as JSON key-value pairs in
 # userhome/.plotly/.credentials. This includes username and api_key.
 
-    prev_creds = {}
-
-    try
-        prev_creds = get_credentials_file()
-    end
-
     # plotly credentials file
     userhome = get(ENV, "HOME", "")
     plotly_credentials_folder = joinpath(userhome, ".plotly")
     plotly_credentials_file = joinpath(plotly_credentials_folder, ".credentials")
 
-    #check to see if dir/file exists --> if not create it
+    #check to see if dir/file exists --> if not, create it
     try
         mkdir(plotly_credentials_folder)
     catch err
         isa(err, SystemError) || rethrow(err)
     end
 
+    prev_creds = get_credentials_file()
+
     #merge input creds with prev creds
-    if prev_creds != {}
+    if !isempty(prev_creds)
         creds = merge(prev_creds, input_creds)
     else
         creds = input_creds
@@ -103,12 +112,6 @@ function set_config_file(input_config::Dict)
 # Save Plotly endpoint configuration as JSON key-value pairs in
 # userhome/.plotly/.config. This includes the plotly_domain, and plotly_api_domain.
 
-    prev_config = {}
-
-    try
-        prev_config = get_config_file()
-    end
-
     # plotly configuration file
     userhome = get(ENV, "HOME", "")
     plotly_config_folder = joinpath(userhome, ".plotly")
@@ -121,8 +124,10 @@ function set_config_file(input_config::Dict)
         isa(err, SystemError) || rethrow(err)
     end
 
+    prev_config = get_config_file()
+
     #merge input config with prev config
-    if prev_config != {}
+    if !isempty(prev_config)
         config = merge(prev_config, input_config)
     else
         config = input_config
@@ -143,19 +148,19 @@ function get_credentials_file()
     plotly_credentials_file = joinpath(plotly_credentials_folder, ".credentials")
 
     if !isfile(plotly_credentials_file)
-        error(" No credentials file found. Please Set up your credentials
-        file by running set_credentials_file({\"username\": \"your_plotly_username\", ...
-        \"api_key\": \"your_plotly_api_key\"})")
-    end
-
-    creds_file = open(plotly_credentials_file)
-    creds = JSON.parse(creds_file)
-
-    if creds == nothing
         creds = {}
+    else
+        creds_file = open(plotly_credentials_file)
+        creds = JSON.parse(creds_file)
+
+        if creds == nothing
+            creds = {}
+        end
+
     end
 
     return creds
+
 end
 
 function get_config_file()
@@ -167,16 +172,15 @@ function get_config_file()
     plotly_config_file = joinpath(plotly_config_folder, ".config")
 
     if !isfile(plotly_config_file)
-        error(" No configuration file found. Please Set up your configuration
-        file by running set_config_file({\"plotly_domain\": \"your_plotly_domain\", ...
-        \"plotly_api_domain\": \"your_plotly_api_domain\"})")
-    end
-
-    config_file = open(plotly_config_file)
-    config = JSON.parse(config_file)
-
-    if config == nothing
         config = {}
+    else
+        config_file = open(plotly_config_file)
+        config = JSON.parse(config_file)
+
+        if config == nothing
+            config = {}
+        end
+
     end
 
     return config
