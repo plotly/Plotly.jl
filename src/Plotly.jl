@@ -33,7 +33,7 @@ default_opts = {
 function get_plot_endpoint()
     config = get_config()
     plot_endpoint = "clientresp"
-    return joinpath(config.plotly_domain, plot_endpoint)
+    return "$(config.plotly_domain)/$plot_endpoint"
 end
 
 function get_content_endpoint(file_id::String, owner::String)
