@@ -37,3 +37,17 @@ figure = Plotly.getFile("5", "chris")
 
 response = Plotly.plot(figure["data"], ["layout"=> figure["layout"], "filename" => "test_get_figure_plot"])
 @test response["error"] == ""
+
+#test get_plot_endpoint
+endpoints = {"plotly_domain"=>"my_plotly_domain", "plotly_api_domain"=>"my_plotly_api_domain"}
+Plotly.signin("test_username", "test_api_key", endpoints)
+plot_endpoint = Plotly.get_plot_endpoint()
+@test plot_endpoint == "my_plotly_domain/clientresp"
+
+#test get_content_endpoint
+endpoints = {"plotly_domain"=>"my_plotly_domain", "plotly_api_domain"=>"my_plotly_api_domain"}
+Plotly.signin("test_username", "test_api_key", endpoints)
+fid = "123_fake"
+owner = "test_owner"
+content_endpoint = Plotly.get_content_endpoint(fid, owner)
+@test content_endpoint == "my_plotly_api_domain/files/test_owner:123_fake/content"
