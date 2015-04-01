@@ -34,7 +34,7 @@ PlotlyAccount("username","your api key")
 Note: you may also specify your session endpoints using signin as follows: 
 
 ```julia
-julia> Plotly.signin("username","your api key",{"plotly_domain"=> "your_plotly_base_endpoint", "plotly_domain"=> "your_plotly_api_endpoint"})
+julia> Plotly.signin("username","your api key",{"plotly_domain"=> "your_plotly_base_endpoint", "plotly_api_domain"=> "your_plotly_api_endpoint"})
 ```
 
 ## Saving your credentials
@@ -46,7 +46,7 @@ Note: your credentials will be saved within /YOUR_HOME_DIR/.plotly/.credentials
 
 ## Saving your endpoint configuration
 ```julia
-julia> Plotly.set_config_file({"plotly_domain"=> "your_plotly_base_endpoint", "plotly_domain"=> "your_plotly_api_endpoint"})
+julia> Plotly.set_config_file({"plotly_domain"=> "your_plotly_base_endpoint", "plotly_api_domain"=> "your_plotly_api_endpoint"})
 ```
 
 Note: your configuration will be saved within /YOUR_HOME_DIR/.plotly/.config
