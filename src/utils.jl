@@ -82,7 +82,7 @@ function set_credentials_file(input_creds::Dict)
 # userhome/.plotly/.credentials. This includes username and api_key.
 
     # plotly credentials file
-    userhome = get(ENV, "HOME", "")
+    userhome = homedir()
     plotly_credentials_folder = joinpath(userhome, ".plotly")
     plotly_credentials_file = joinpath(plotly_credentials_folder, ".credentials")
 
@@ -113,7 +113,7 @@ function set_config_file(input_config::Dict)
 # userhome/.plotly/.config. This includes the plotly_domain, and plotly_api_domain.
 
     # plotly configuration file
-    userhome = get(ENV, "HOME", "")
+    userhome = homedir()
     plotly_config_folder = joinpath(userhome, ".plotly")
     plotly_config_file = joinpath(plotly_config_folder, ".config")
 
@@ -143,7 +143,7 @@ function get_credentials_file()
 # Load user credentials as a Dict
 
     # plotly credentials file
-    userhome = get(ENV, "HOME", "")
+    userhome = homedir()
     plotly_credentials_folder = joinpath(userhome, ".plotly")
     plotly_credentials_file = joinpath(plotly_credentials_folder, ".credentials")
 
@@ -167,7 +167,7 @@ function get_config_file()
 # Load endpoint configuration as a Dict
 
     # plotly configuration file
-    userhome = get(ENV, "HOME", "")
+    userhome = homedir()
     plotly_config_folder = joinpath(userhome, ".plotly")
     plotly_config_file = joinpath(plotly_config_folder, ".config")
 
