@@ -90,8 +90,8 @@ function style(style_opts,meta_opts=Dict())
 
     r = post(endpoint,
     merge(default_opts,
-    {"un" => plotlyaccount.username,
-    "key" => plotlyaccount.api_key,
+    {"un" => creds.username,
+    "key" => creds.api_key,
     "args" => json([style_opts]),
     "origin" => "style",
     "kwargs" => json(meta_opts)}))
