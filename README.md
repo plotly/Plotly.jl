@@ -1,6 +1,6 @@
 # A Julia interface to the plot.ly API
 
-[![Build Status](https://travis-ci.org/plotly/Plotly-Julia.svg)](https://travis-ci.org/plotly/Plotly-Julia)
+[![Build Status](https://travis-ci.org/plotly/Plotly.jl.svg)](https://travis-ci.org/plotly/Plotly.jl)
 
 README quickly to get started. Alternately, checkout out the pretty Julia docs at http://plot.ly/api
 
