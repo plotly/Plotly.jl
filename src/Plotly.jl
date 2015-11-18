@@ -6,16 +6,16 @@ include("plot.jl")
 include("utils.jl")
 
 type CurrentPlot
-    filename::ASCIIASCIIString
+    filename::ASCIIString
     fileopt::ASCIIString
     url::ASCIIString
 end
 
 api_version = "v2"
 
-default_options = {"filename"=>"Plot from Julia API",
-"world_readable"=> true,
-"layout"=>{""=>""}}
+default_options = Dict("filename"=>"Plot from Julia API",
+  "world_readable"=> true,
+  "layout"=>Dict(""=>""))
 
 ## Taken from https://github.com/johnmyleswhite/Vega.jl/blob/master/src/Vega.jl#L51
 # Open a URL in a browser
@@ -25,10 +25,10 @@ function openurl(url::ASCIIString)
     @linux_only run(`xdg-open $url`)
 end
 
-default_opts = {
-"origin" => "plot",
-"platform" => "Julia",
-"version" => "0.2"}
+default_opts = Dict(
+  "origin" => "plot",
+  "platform" => "Julia",
+  "version" => "0.2")
 
 function get_plot_endpoint()
     config = get_config()
@@ -51,12 +51,12 @@ function plot(data::Array,options=Dict())
     opt = merge(default_options,options)
     r = post(endpoint,
              merge(default_opts,
-                   {
+                   Dict(
                     "un" => creds.username,
                     "key" => creds.api_key,
                     "args" => json(data),
                     "kwargs" => json(opt)
-                    })
+                    ))
              )
     body=JSON.parse(bytestring(r.body))
 
@@ -79,11 +79,11 @@ function layout(layout_opts::Dict,meta_opts=Dict())
 
     r = post(endpoint,
     merge(default_opts,
-    {"un" => creds.username,
+    Dict("un" => creds.username,
     "key" => creds.api_key,
     "args" => json(layout_opts),
     "origin" => "layout",
-    "kwargs" => json(meta_opts)}))
+    "kwargs" => json(meta_opts))))
     __parseresponse(r)
 end
 
@@ -95,11 +95,11 @@ function style(style_opts,meta_opts=Dict())
 
     r = post(endpoint,
     merge(default_opts,
-    {"un" => creds.username,
+    Dict("un" => creds.username,
     "key" => creds.api_key,
     "args" => json([style_opts]),
     "origin" => "style",
-    "kwargs" => json(meta_opts)}))
+    "kwargs" => json(meta_opts))))
     __parseresponse(r)
 end
 
@@ -161,9 +161,9 @@ end
 
 function get_template(format_type::ASCIIString)
     if format_type == "layout"
-        return {
+        return Dict(
                 "title"=>"Click to enter Plot title",
-                "xaxis"=>{
+                "xaxis"=>Dict(
                         "range"=>[-1,6],
                         "type"=>"-",
                         "mirror"=>true,
@@ -190,9 +190,9 @@ function get_template(format_type::ASCIIString)
                         "zerolinewidth"=>1,
                         "title"=>"Click to enter X axis title",
                         "unit"=>"",
-                        "titlefont"=>{"family"=>"","size"=>0,"color"=>""},
-                        "tickfont"=>{"family"=>"","size"=>0,"color"=>""}},
-                "yaxis"=>{
+                        "titlefont"=>Dict("family"=>"","size"=>0,"color"=>""),
+                        "tickfont"=>Dict("family"=>"","size"=>0,"color"=>"")),
+                "yaxis"=>Dict(
                         "range"=>[-1,4],
                         "type"=>"-",
                         "mirror"=>true,
@@ -219,18 +219,18 @@ function get_template(format_type::ASCIIString)
                         "zerolinewidth"=>1,
                         "title"=>"Click to enter Y axis title",
                         "unit"=>"",
-                        "titlefont"=>{"family"=>"","size"=>0,"color"=>""},
-                        "tickfont"=>{"family"=>"","size"=>0,"color"=>""}},
-                "legend"=>{
+                        "titlefont"=>Dict("family"=>"","size"=>0,"color"=>""),
+                        "tickfont"=>Dict("family"=>"","size"=>0,"color"=>"")),
+                "legend"=>Dict(
                         "bgcolor"=>"#fff",
                         "bordercolor"=>"#000",
                         "borderwidth"=>1,
-                        "font"=>{"family"=>"","size"=>0,"color"=>""},
-                        "traceorder"=>"normal"},
+                        "font"=>Dict("family"=>"","size"=>0,"color"=>""),
+                        "traceorder"=>"normal"),
                 "width"=>700,
                 "height"=>450,
                 "autosize"=>"initial",
-                "margin"=>{"l"=>80,"r"=>80,"t"=>80,"b"=>80,"pad"=>2},
+                "margin"=>Dict("l"=>80,"r"=>80,"t"=>80,"b"=>80,"pad"=>2),
                 "paper_bgcolor"=>"#fff",
                 "plot_bgcolor"=>"#fff",
                 "barmode"=>"stack",
@@ -239,10 +239,10 @@ function get_template(format_type::ASCIIString)
                 "boxmode"=>"overlay",
                 "boxgap"=>0.3,
                 "boxgroupgap"=>0.3,
-                "font"=>{"family"=>"Arial, sans-serif;","size"=>12,"color"=>"#000"},
-                "titlefont"=>{"family"=>"","size"=>0,"color"=>""},
+                "font"=>Dict("family"=>"Arial, sans-serif;","size"=>12,"color"=>"#000"),
+                "titlefont"=>Dict("family"=>"","size"=>0,"color"=>""),
                 "dragmode"=>"zoom",
-                "hovermode"=>"x"}
+                "hovermode"=>"x")
     end
 end
 

@@ -1,8 +1,8 @@
 using JSON
 
-default_endpoints = {
-"base" => "https://plot.ly",
-"api" => "https://api.plot.ly/v2"}
+default_endpoints = Dict(
+  "base" => "https://plot.ly",
+  "api" => "https://api.plot.ly/v2")
 
 type PlotlyCredentials
     username::ASCIIString
@@ -148,13 +148,13 @@ function get_credentials_file()
     plotly_credentials_file = joinpath(plotly_credentials_folder, ".credentials")
 
     if !isfile(plotly_credentials_file)
-        creds = {}
+        creds = Dict()
     else
         creds_file = open(plotly_credentials_file)
         creds = JSON.parse(creds_file)
 
         if creds == nothing
-            creds = {}
+            creds = Dict()
         end
 
     end
@@ -172,13 +172,13 @@ function get_config_file()
     plotly_config_file = joinpath(plotly_config_folder, ".config")
 
     if !isfile(plotly_config_file)
-        config = {}
+        config = Dict()
     else
         config_file = open(plotly_config_file)
         config = JSON.parse(config_file)
 
         if config == nothing
-            config = {}
+            config = Dict()
         end
 
     end
