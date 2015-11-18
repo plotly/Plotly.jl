@@ -124,6 +124,7 @@ function getFile(file_id::ASCIIString, owner=None)
                                     ])
 
   r = get(endpoint, options)
+  print(r)
 
   __parseresponse(r)
 
