@@ -6,9 +6,9 @@ include("plot.jl")
 include("utils.jl")
 
 type CurrentPlot
-    filename::String
-    fileopt::String
-    url::String
+    filename::ASCIIASCIIString
+    fileopt::ASCIIString
+    url::ASCIIString
 end
 
 api_version = "v2"
@@ -19,7 +19,7 @@ default_options = {"filename"=>"Plot from Julia API",
 
 ## Taken from https://github.com/johnmyleswhite/Vega.jl/blob/master/src/Vega.jl#L51
 # Open a URL in a browser
-function openurl(url::String)
+function openurl(url::ASCIIString)
     @osx_only run(`open $url`)
     @windows_only run(`start $url`)
     @linux_only run(`xdg-open $url`)
@@ -36,7 +36,7 @@ function get_plot_endpoint()
     return "$(config.plotly_domain)/$plot_endpoint"
 end
 
-function get_content_endpoint(file_id::String, owner::String)
+function get_content_endpoint(file_id::ASCIIString, owner::ASCIIString)
     config = get_config()
     api_endpoint = "$(config.plotly_api_domain)/$api_version/files"
     detail = "$owner:$file_id"
@@ -104,7 +104,7 @@ function style(style_opts,meta_opts=Dict())
 end
 
 
-function getFile(file_id::String, owner=None)
+function getFile(file_id::ASCIIString, owner=None)
   creds = get_credentials()
   username = creds.username
   api_key = creds.api_key
@@ -159,7 +159,7 @@ function __parseresponse(r)
     end
 end
 
-function get_template(format_type::String)
+function get_template(format_type::ASCIIString)
     if format_type == "layout"
         return {
                 "title"=>"Click to enter Plot title",
