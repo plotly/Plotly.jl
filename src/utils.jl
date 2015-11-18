@@ -5,16 +5,16 @@ default_endpoints = {
 "api" => "https://api.plot.ly/v2"}
 
 type PlotlyCredentials
-    username::AbstractString
-    api_key::AbstractString
+    username::ASCIIString
+    api_key::ASCIIString
 end
 
 type PlotlyConfig
-    plotly_domain::AbstractString
-    plotly_api_domain::AbstractString
+    plotly_domain::ASCIIString
+    plotly_api_domain::ASCIIString
 end
 
-function signin(username::AbstractString, api_key::AbstractString, endpoints=None)
+function signin(username::ASCIIString, api_key::ASCIIString, endpoints=None)
 # Define session credentials/endpoint configuration, where endpoint is a Dict
 
     global plotlycredentials = PlotlyCredentials(username, api_key)
