@@ -1,20 +1,20 @@
 using JSON
 
-default_endpoints = {
-"base" => "https://plot.ly",
-"api" => "https://api.plot.ly/v2"}
+default_endpoints = Dict(
+  "base" => "https://plot.ly",
+  "api" => "https://api.plot.ly/v2")
 
 type PlotlyCredentials
-    username::String
-    api_key::String
+    username::ASCIIString
+    api_key::ASCIIString
 end
 
 type PlotlyConfig
-    plotly_domain::String
-    plotly_api_domain::String
+    plotly_domain::ASCIIString
+    plotly_api_domain::ASCIIString
 end
 
-function signin(username::String, api_key::String, endpoints=None)
+function signin(username::ASCIIString, api_key::ASCIIString, endpoints=None)
 # Define session credentials/endpoint configuration, where endpoint is a Dict
 
     global plotlycredentials = PlotlyCredentials(username, api_key)
@@ -148,13 +148,13 @@ function get_credentials_file()
     plotly_credentials_file = joinpath(plotly_credentials_folder, ".credentials")
 
     if !isfile(plotly_credentials_file)
-        creds = {}
+        creds = Dict()
     else
         creds_file = open(plotly_credentials_file)
         creds = JSON.parse(creds_file)
 
         if creds == nothing
-            creds = {}
+            creds = Dict()
         end
 
     end
@@ -172,13 +172,13 @@ function get_config_file()
     plotly_config_file = joinpath(plotly_config_folder, ".config")
 
     if !isfile(plotly_config_file)
-        config = {}
+        config = Dict()
     else
         config_file = open(plotly_config_file)
         config = JSON.parse(config_file)
 
         if config == nothing
-            config = {}
+            config = Dict()
         end
 
     end
