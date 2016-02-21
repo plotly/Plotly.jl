@@ -1,9 +1,13 @@
+__precompile__(true)
+
 module Plotly
-using HTTPClient.HTTPC
+using Requests
 using JSON
 
 include("plot.jl")
 include("utils.jl")
+
+export default_options, default_opts, get_config, get_plot_endpoint, get_credentials,get_content_endpoint,get_template
 
 type CurrentPlot
     filename::ASCIIString
@@ -49,8 +53,11 @@ function plot(data::Array,options=Dict())
     creds = get_credentials()
     endpoint = get_plot_endpoint()
     opt = merge(default_options,options)
+
+    #post("http://httpbin.org/post"; headers = Dict("Date" => "Tue, 15 Nov 1994 08:12:31 GMT"), cookies = Dict("sessionkey" => "abc"))
+
     r = post(endpoint,
-             merge(default_opts,
+             data = merge(default_opts,
                    Dict(
                     "un" => creds.username,
                     "key" => creds.api_key,
@@ -58,10 +65,10 @@ function plot(data::Array,options=Dict())
                     "kwargs" => json(opt)
                     ))
              )
-    body=JSON.parse(bytestring(r.body))
+    body=Requests.json(r)
 
-    if r.http_code != 200
-        error(["r.http_code"])
+    if statuscode(r) != 200
+        error(["r.status"])
     elseif body["error"] != ""
         error(body["error"])
     else
@@ -78,7 +85,7 @@ function layout(layout_opts::Dict,meta_opts=Dict())
     merge!(meta_opts,get_required_params(["filename","fileopt"],meta_opts))
 
     r = post(endpoint,
-    merge(default_opts,
+    data = merge(default_opts,
     Dict("un" => creds.username,
     "key" => creds.api_key,
     "args" => json(layout_opts),
@@ -94,7 +101,7 @@ function style(style_opts,meta_opts=Dict())
     merge!(meta_opts,get_required_params(["filename","fileopt"],meta_opts))
 
     r = post(endpoint,
-    merge(default_opts,
+    data = merge(default_opts,
     Dict("un" => creds.username,
     "key" => creds.api_key,
     "args" => json([style_opts]),
@@ -118,12 +125,9 @@ function getFile(file_id::ASCIIString, owner=None)
 
   auth = string("Basic ", base64("$username:$api_key"))
 
-  options = RequestOptions(headers=[
-                                    ("Authorization", auth),
-                                    ("Plotly-Client-Platform", lib_version)
-                                    ])
+  options = Dict("Authorization"=> auth,"Plotly-Client-Platform"=> lib_version)
 
-  r = get(endpoint, options)
+  r = get(endpoint, headers=options)
   print(r)
 
   __parseresponse(r)
@@ -148,9 +152,9 @@ function get_required_params(required,opts)
 end
 
 function __parseresponse(r)
-    body=JSON.parse(bytestring(r.body))
-    if r.http_code != 200
-        error(["r.http_code"])
+    body=Requests.json(r)
+    if statuscode(r) != 200
+        error(["r.status"])
     elseif haskey(body, "error") && body["error"] != ""
         error(body["error"])
     elseif haskey(body, "detail") && body["detail"] != ""
