@@ -7,7 +7,7 @@ using JSON
 include("plot.jl")
 include("utils.jl")
 
-export default_options, default_opts, get_config, get_plot_endpoint, get_credentials,get_content_endpoint,get_template
+#export default_options, default_opts, get_config, get_plot_endpoint, get_credentials,get_content_endpoint,get_template
 
 type CurrentPlot
     filename::ASCIIString
