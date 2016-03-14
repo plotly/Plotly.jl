@@ -69,7 +69,7 @@ function Requests.post(p::Plot; kwargs...)
     end
 end
 
-function Reqeusts.post(l::AbstractLayout, meta_opts=Dict(); meta_kwargs...)
+function Requests.post(l::AbstractLayout, meta_opts=Dict(); meta_kwargs...)
     creds = get_credentials()
     endpoint = get_plot_endpoint()
 
