@@ -69,36 +69,38 @@ function Requests.post(p::Plot; kwargs...)
     end
 end
 
-function layout(layout_opts::Dict,meta_opts=Dict())
+function Reqeusts.post(l::AbstractLayout, meta_opts=Dict(); meta_kwargs...)
     creds = get_credentials()
     endpoint = get_plot_endpoint()
 
-    merge!(meta_opts, get_required_params(["filename", "fileopt"], meta_opts))
-
-    r = post(endpoint,
+    meta = merge(meta_opts,
+                 get_required_params(["filename", "fileopt"], meta_opts),
+                 Dict(meta_kwargs))
     data = merge(default_opts,
-    Dict("un" => creds.username,
-         "key" => creds.api_key,
-         "args" => json(layout_opts),
-         "origin" => "layout",
-         "kwargs" => json(meta_opts))))
-    __parseresponse(r)
+                 Dict("un" => creds.username,
+                      "key" => creds.api_key,
+                      "args" => json(l),
+                      "origin" => "layout",
+                      "kwargs" => json(meta)))
+
+    __parseresponse(post(endpoint, data=data))
 end
 
-function style(style_opts,meta_opts=Dict())
+function style(style_opts, meta_opts=Dict(); meta_kwargs...)
     creds = get_credentials()
     endpoint = get_plot_endpoint()
 
-    merge!(meta_opts, get_required_params(["filename", "fileopt"], meta_opts))
-
-    r = post(endpoint,
+    meta = merge(meta_opts,
+                 get_required_params(["filename", "fileopt"], meta_opts),
+                 Dict(meta_kwargs))
     data = merge(default_opts,
-    Dict("un" => creds.username,
-         "key" => creds.api_key,
-         "args" => json([style_opts]),
-         "origin" => "style",
-         "kwargs" => json(meta_opts))))
-    __parseresponse(r)
+                 Dict("un" => creds.username,
+                      "key" => creds.api_key,
+                      "args" => json([style_opts]),
+                      "origin" => "style",
+                      "kwargs" => json(meta_opts)))
+
+    __parseresponse(post(endpoint, data=data))
 end
 
 
