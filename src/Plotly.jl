@@ -9,7 +9,7 @@ using Reexport: @reexport
 
 include("utils.jl")
 
-#export default_options, default_opts, get_config, get_plot_endpoint, get_credentials,get_content_endpoint,get_template
+#export default_kwargs, default_opts, get_config, get_plot_endpoint, get_credentials,get_content_endpoint,get_template
 
 type CurrentPlot
     filename::ASCIIString
@@ -19,9 +19,8 @@ end
 
 const api_version = "v2"
 
-const default_options = Dict("filename"=>"Plot from Julia API",
-                             "world_readable"=> true,
-                             "layout"=>Dict())
+const default_kwargs = Dict{Symbol,Any}(:filename=>"Plot from Julia API",
+                                         :world_readable=> true)
 
 ## Taken from https://github.com/johnmyleswhite/Vega.jl/blob/master/src/Vega.jl#L51
 # Open a URL in a browser
@@ -31,9 +30,9 @@ function openurl(url::ASCIIString)
     @linux_only run(`xdg-open $url`)
 end
 
-const default_opts = Dict("origin" => "plot",
-                          "platform" => "Julia",
-                          "version" => "0.2")
+const default_opts = Dict{Symbol,Any}(:origin => "plot",
+                                      :platform => "Julia",
+                                      :version => "0.2")
 
 get_plot_endpoint() = "$(get_config().plotly_domain)/clientresp"
 
@@ -44,20 +43,19 @@ function get_content_endpoint(file_id::ASCIIString, owner::ASCIIString)
     "$api_endpoint/$detail/content"
 end
 
-function plot(data::Array,options=Dict())
+function Requests.post(p::Plot; kwargs...)
     creds = get_credentials()
     endpoint = get_plot_endpoint()
-    opt = merge(default_options,options)
+    opt = merge(default_kwargs, Dict(:layout => p.layout.fields),
+                Dict(kwargs))
 
-    r = post(endpoint,
-             data = merge(default_opts,
-                   Dict(
-                    "un" => creds.username,
-                    "key" => creds.api_key,
-                    "args" => json(data),
-                    "kwargs" => json(opt)
-                    ))
-             )
+    data = merge(default_opts,
+                 Dict("un" => creds.username,
+                      "key" => creds.api_key,
+                      "args" => json(p.data),
+                      "kwargs" => json(opt)))
+
+    r = post(endpoint, data=data)
     body=Requests.json(r)
 
     if statuscode(r) != 200
@@ -66,7 +64,7 @@ function plot(data::Array,options=Dict())
         error(body["error"])
     else
         global currentplot
-        currentplot=CurrentPlot(body["filename"],"new",body["url"])
+        currentplot=CurrentPlot(body["filename"], "new", body["url"])
         body
     end
 end
@@ -75,15 +73,15 @@ function layout(layout_opts::Dict,meta_opts=Dict())
     creds = get_credentials()
     endpoint = get_plot_endpoint()
 
-    merge!(meta_opts,get_required_params(["filename","fileopt"],meta_opts))
+    merge!(meta_opts, get_required_params(["filename", "fileopt"], meta_opts))
 
     r = post(endpoint,
     data = merge(default_opts,
     Dict("un" => creds.username,
-    "key" => creds.api_key,
-    "args" => json(layout_opts),
-    "origin" => "layout",
-    "kwargs" => json(meta_opts))))
+         "key" => creds.api_key,
+         "args" => json(layout_opts),
+         "origin" => "layout",
+         "kwargs" => json(meta_opts))))
     __parseresponse(r)
 end
 
@@ -91,39 +89,39 @@ function style(style_opts,meta_opts=Dict())
     creds = get_credentials()
     endpoint = get_plot_endpoint()
 
-    merge!(meta_opts,get_required_params(["filename","fileopt"],meta_opts))
+    merge!(meta_opts, get_required_params(["filename", "fileopt"], meta_opts))
 
     r = post(endpoint,
     data = merge(default_opts,
     Dict("un" => creds.username,
-    "key" => creds.api_key,
-    "args" => json([style_opts]),
-    "origin" => "style",
-    "kwargs" => json(meta_opts))))
+         "key" => creds.api_key,
+         "args" => json([style_opts]),
+         "origin" => "style",
+         "kwargs" => json(meta_opts))))
     __parseresponse(r)
 end
 
 
 function getFile(file_id::ASCIIString, owner=None)
-  creds = get_credentials()
-  username = creds.username
-  api_key = creds.api_key
+    creds = get_credentials()
+    username = creds.username
+    api_key = creds.api_key
 
-  if (owner == None)
-    owner = username
-  end
+    if (owner == None)
+        owner = username
+    end
 
-  endpoint = get_content_endpoint(file_id, owner)
-  lib_version = string(default_opts["platform"], " ", default_opts["version"])
+    endpoint = get_content_endpoint(file_id, owner)
+    lib_version = string(default_opts["platform"], " ", default_opts["version"])
 
-  auth = string("Basic ", base64("$username:$api_key"))
+    auth = string("Basic ", base64("$username:$api_key"))
 
-  options = Dict("Authorization"=> auth,"Plotly-Client-Platform"=> lib_version)
+    options = Dict("Authorization"=>auth, "Plotly-Client-Platform"=>lib_version)
 
-  r = get(endpoint, headers=options)
-  print(r)
+    r = get(endpoint, headers=options)
+    print(r)
 
-  __parseresponse(r)
+    __parseresponse(r)
 
 end
 
@@ -138,7 +136,10 @@ function get_required_params(required,opts)
         elseif isdefined(Plotly,:currentplot)
             result[p] = getfield(currentplot,symbol(p))
         else
-            error("Missing required param ",p, ". Make sure to create a plot first. Please refer to http://plot.ly/api, or ask chris@plot.ly")
+            msg = string("Missing required param $(p). ",
+                         "Make sure to create a plot first. ",
+                         " Please refer to http://plot.ly/api")
+            error(msg)
         end
     end
     result
