@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/plotly/Plotly.jl.svg)](https://travis-ci.org/plotly/Plotly.jl)
 
-README quickly to get started. Alternately, checkout out the pretty Julia docs at http://plot.ly/api
+README quickly to get started. Alternately, checkout out the pretty Julia docs at https://plot.ly/julia/
 
 ## Installation
 
