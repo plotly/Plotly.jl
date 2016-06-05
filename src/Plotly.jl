@@ -10,7 +10,7 @@ import Requests: URI, post
 
 @reexport using PlotlyJS
 export post
-export set_credentials_file
+export set_credentials_file, RemotePlot, download_plot
 
 include("utils.jl")
 
@@ -129,6 +129,9 @@ function Base.download(plot::RemotePlot)
     local_plot = JSON.parse(Plot, bytestring(response))
     return PlotlyJS.SyncPlot(local_plot)
 end
+
+download_plot(url) = download(RemotePlot(url))
+download_plot(plot::RemotePlot) = download(plot)
 
 immutable PlotlyError <: Exception
     msg::String
