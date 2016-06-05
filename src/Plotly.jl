@@ -1,25 +1,27 @@
-__precompile__(true)
+# __precompile__(true)
 
 module Plotly
+using Compat
+using Compat: String
 using Requests
 using JSON
+using Reexport: @reexport
+import Requests: URI, post
 
-include("plot.jl")
+@reexport using PlotlyJS
+export post
+export set_credentials_file, RemotePlot, download_plot
+
 include("utils.jl")
 
-#export default_options, default_opts, get_config, get_plot_endpoint, get_credentials,get_content_endpoint,get_template
+const api_version = "v2"
 
-type CurrentPlot
-    filename::ASCIIString
-    fileopt::ASCIIString
-    url::ASCIIString
-end
+const default_kwargs = Dict{Symbol,Any}(:filename=>"Plot from Julia API",
+                                        :world_readable=> true)
 
-api_version = "v2"
-
-default_options = Dict("filename"=>"Plot from Julia API",
-  "world_readable"=> true,
-  "layout"=>Dict(""=>""))
+const default_opts = Dict{Symbol,Any}(:origin => "plot",
+                                      :platform => "Julia",
+                                      :version => "0.2")
 
 ## Taken from https://github.com/johnmyleswhite/Vega.jl/blob/master/src/Vega.jl#L51
 # Open a URL in a browser
@@ -29,234 +31,127 @@ function openurl(url::ASCIIString)
     @linux_only run(`xdg-open $url`)
 end
 
-default_opts = Dict(
-  "origin" => "plot",
-  "platform" => "Julia",
-  "version" => "0.2")
+openurl(url::URI) = openurl(string(url))
 
-function get_plot_endpoint()
-    config = get_config()
-    plot_endpoint = "clientresp"
-    return "$(config.plotly_domain)/$plot_endpoint"
+get_plot_endpoint() = "$(get_config().plotly_domain)/clientresp"
+
+"""
+Proxy for a plot stored on the Plotly cloud.
+"""
+immutable RemotePlot
+    url::URI
 end
+RemotePlot(url) = RemotePlot(URI(url))
 
-function get_content_endpoint(file_id::ASCIIString, owner::ASCIIString)
-    config = get_config()
-    api_endpoint = "$(config.plotly_api_domain)/$api_version/files"
-    detail = "$owner:$file_id"
-    custom_action = "content"
-    content_endpoint = "$api_endpoint/$detail/$custom_action"
-    return content_endpoint
-end
+"""
+Display a plot stored in the Plotly cloud in a browser window.
+"""
+Base.open(p::RemotePlot) = openurl(p.url)
 
-function plot(data::Array,options=Dict())
+"""
+Post a local Plotly plot to the Plotly cloud.
+
+Must be signed in first.
+"""
+function post(p::Plot; kwargs...)
     creds = get_credentials()
     endpoint = get_plot_endpoint()
-    opt = merge(default_options,options)
+    opt = merge(default_kwargs, Dict(:layout => p.layout.fields),
+    Dict(kwargs))
 
-    #post("http://httpbin.org/post"; headers = Dict("Date" => "Tue, 15 Nov 1994 08:12:31 GMT"), cookies = Dict("sessionkey" => "abc"))
-
-    r = post(endpoint,
-             data = merge(default_opts,
-                   Dict(
-                    "un" => creds.username,
-                    "key" => creds.api_key,
-                    "args" => json(data),
-                    "kwargs" => json(opt)
-                    ))
-             )
-    body=Requests.json(r)
-
-    if statuscode(r) != 200
-        error(["r.status"])
-    elseif body["error"] != ""
-        error(body["error"])
-    else
-        global currentplot
-        currentplot=CurrentPlot(body["filename"],"new",body["url"])
-        body
-    end
-end
-
-function layout(layout_opts::Dict,meta_opts=Dict())
-    creds = get_credentials()
-    endpoint = get_plot_endpoint()
-
-    merge!(meta_opts,get_required_params(["filename","fileopt"],meta_opts))
-
-    r = post(endpoint,
     data = merge(default_opts,
     Dict("un" => creds.username,
     "key" => creds.api_key,
-    "args" => json(layout_opts),
-    "origin" => "layout",
-    "kwargs" => json(meta_opts))))
-    __parseresponse(r)
+    "args" => json(p.data),
+    "kwargs" => json(opt)))
+
+    r = post(endpoint, data=data)
+    body = parse_response(r)
+    return RemotePlot(URI(body["url"]))
 end
 
-function style(style_opts,meta_opts=Dict())
+function Requests.post(l::AbstractLayout, meta_opts=Dict(); meta_kwargs...)
     creds = get_credentials()
     endpoint = get_plot_endpoint()
 
-    merge!(meta_opts,get_required_params(["filename","fileopt"],meta_opts))
+    meta = merge(meta_opts,
+    get_required_params(["filename", "fileopt"], meta_opts),
+    Dict(meta_kwargs))
+    data = merge(default_opts,
+    Dict("un" => creds.username,
+         "key" => creds.api_key,
+         "args" => json(l),
+         "origin" => "layout",
+         "kwargs" => json(meta)))
 
-    r = post(endpoint,
+    parse_response(post(endpoint, data=data))
+end
+
+post(p::PlotlyJS.SyncPlot) = post(p.plot)
+
+function style(style_opts, meta_opts=Dict(); meta_kwargs...)
+    creds = get_credentials()
+    endpoint = get_plot_endpoint()
+
+    meta = merge(meta_opts,
+    get_required_params(["filename", "fileopt"], meta_opts),
+    Dict(meta_kwargs))
     data = merge(default_opts,
     Dict("un" => creds.username,
     "key" => creds.api_key,
     "args" => json([style_opts]),
     "origin" => "style",
-    "kwargs" => json(meta_opts))))
-    __parseresponse(r)
+    "kwargs" => json(meta_opts)))
+
+    parse_response(post(endpoint, data=data))
 end
 
+"""
+Transport a plot from the Plotly cloud to a local `Plot` object.
 
-function getFile(file_id::ASCIIString, owner=None)
-  creds = get_credentials()
-  username = creds.username
-  api_key = creds.api_key
-
-  if (owner == None)
-    owner = username
-  end
-
-  endpoint = get_content_endpoint(file_id, owner)
-  lib_version = string(default_opts["platform"], " ", default_opts["version"])
-
-  auth = string("Basic ", base64("$username:$api_key"))
-
-  options = Dict("Authorization"=> auth,"Plotly-Client-Platform"=> lib_version)
-
-  r = get(endpoint, headers=options)
-  print(r)
-
-  __parseresponse(r)
-
-end
-
-
-function get_required_params(required,opts)
-    # Priority given to user-inputted opts, then currentplot
-    result=Dict()
-    for p in required
-        global currentplot
-        if haskey(opts,p)
-            result[p] = opts[p]
-        elseif isdefined(Plotly,:currentplot)
-            result[p] = getfield(currentplot,symbol(p))
-        else
-            error("Missing required param ",p, ". Make sure to create a plot first. Please refer to http://plot.ly/api, or ask chris@plot.ly")
-        end
+Must be signed in first if the plot is not public.
+"""
+function Base.download(plot::RemotePlot)
+    creds = get_credentials()
+    username = creds.username
+    api_key = creds.api_key
+    lib_version = string(default_opts[:platform], " ", default_opts[:version])
+    auth = string("Basic ", base64encode("$username:$api_key"))
+    options = Dict("Authorization"=>auth, "Plotly-Client-Platform"=>lib_version)
+    original_path = plot.url.path
+    if original_path[end] == '/'
+        path = original_path[1:end-1]
+    else
+        path = original_path
     end
-    result
+    endpoint = URI(plot.url, path="$path.json")
+    response = get(endpoint, headers=options)
+    local_plot = JSON.parse(Plot, bytestring(response))
+    return PlotlyJS.SyncPlot(local_plot)
 end
 
-function __parseresponse(r)
-    body=Requests.json(r)
-    if statuscode(r) != 200
-        error(["r.status"])
-    elseif haskey(body, "error") && body["error"] != ""
-        error(body["error"])
-    elseif haskey(body, "detail") && body["detail"] != ""
-        error(body["detail"])
+download_plot(url) = download(RemotePlot(url))
+download_plot(plot::RemotePlot) = download(plot)
+
+immutable PlotlyError <: Exception
+    msg::String
+end
+
+function Base.show(io::IO, err::PlotlyError)
+    print(io, "Plotly error: $(err.msg)")
+end
+
+function parse_response(r)
+    body = Requests.json(r)
+    if statuscode(r) ≠ 200
+        throw(PlotlyError("Non-sucessful status code: $(statuscode(r))"))
+    elseif "error" ∈ keys(body) && body["error"] ≠ ""
+        throw(PlotlyError(body["error"]))
+    elseif "detail" ∈ keys(body) && body["detail"] ≠ ""
+        throw(PlotlyError(body["detail"]))
     else
         body
     end
-end
-
-function get_template(format_type::ASCIIString)
-    if format_type == "layout"
-        return Dict(
-                "title"=>"Click to enter Plot title",
-                "xaxis"=>Dict(
-                        "range"=>[-1,6],
-                        "type"=>"-",
-                        "mirror"=>true,
-                        "linecolor"=>"#000",
-                        "linewidth"=>1,
-                        "tick0"=>0,
-                        "dtick"=>2,
-                        "ticks"=>"outside",
-                        "ticklen"=>5,
-                        "tickwidth"=>1,
-                        "tickcolor"=>"#000",
-                        "nticks"=>0,
-                        "showticklabels"=>true,
-                        "tickangle"=>"auto",
-                        "exponentformat"=>"e",
-                        "showexponent"=>"all",
-                        "showgrid"=>true,
-                        "gridcolor"=>"#ddd",
-                        "gridwidth"=>1,
-                        "autorange"=>true,
-                        "autotick"=>true,
-                        "zeroline"=>true,
-                        "zerolinecolor"=>"#000",
-                        "zerolinewidth"=>1,
-                        "title"=>"Click to enter X axis title",
-                        "unit"=>"",
-                        "titlefont"=>Dict("family"=>"","size"=>0,"color"=>""),
-                        "tickfont"=>Dict("family"=>"","size"=>0,"color"=>"")),
-                "yaxis"=>Dict(
-                        "range"=>[-1,4],
-                        "type"=>"-",
-                        "mirror"=>true,
-                        "linecolor"=>"#000",
-                        "linewidth"=>1,
-                        "tick0"=>0,
-                        "dtick"=>1,
-                        "ticks"=>"outside",
-                        "ticklen"=>5,
-                        "tickwidth"=>1,
-                        "tickcolor"=>"#000",
-                        "nticks"=>0,
-                        "showticklabels"=>true,
-                        "tickangle"=>"auto",
-                        "exponentformat"=>"e",
-                        "showexponent"=>"all",
-                        "showgrid"=>true,
-                        "gridcolor"=>"#ddd",
-                        "gridwidth"=>1,
-                        "autorange"=>true,
-                        "autotick"=>true,
-                        "zeroline"=>true,
-                        "zerolinecolor"=>"#000",
-                        "zerolinewidth"=>1,
-                        "title"=>"Click to enter Y axis title",
-                        "unit"=>"",
-                        "titlefont"=>Dict("family"=>"","size"=>0,"color"=>""),
-                        "tickfont"=>Dict("family"=>"","size"=>0,"color"=>"")),
-                "legend"=>Dict(
-                        "bgcolor"=>"#fff",
-                        "bordercolor"=>"#000",
-                        "borderwidth"=>1,
-                        "font"=>Dict("family"=>"","size"=>0,"color"=>""),
-                        "traceorder"=>"normal"),
-                "width"=>700,
-                "height"=>450,
-                "autosize"=>"initial",
-                "margin"=>Dict("l"=>80,"r"=>80,"t"=>80,"b"=>80,"pad"=>2),
-                "paper_bgcolor"=>"#fff",
-                "plot_bgcolor"=>"#fff",
-                "barmode"=>"stack",
-                "bargap"=>0.2,
-                "bargroupgap"=>0.0,
-                "boxmode"=>"overlay",
-                "boxgap"=>0.3,
-                "boxgroupgap"=>0.3,
-                "font"=>Dict("family"=>"Arial, sans-serif;","size"=>12,"color"=>"#000"),
-                "titlefont"=>Dict("family"=>"","size"=>0,"color"=>""),
-                "dragmode"=>"zoom",
-                "hovermode"=>"x")
-    end
-end
-
-function help()
-    println("Please enter the name of the funtion you'd like help with")
-    println("Options include:")
-    println("\t Plotly.help(\"plot\") OR Plotly.help(:plot)")
-    println("\t Plotly.help(\"layout\") OR Plotly.help(:layout)")
-    println("\t Plotly.help(\"style\") OR Plotly.help(:style)")
 end
 
 end

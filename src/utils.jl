@@ -5,22 +5,22 @@ default_endpoints = Dict(
   "api" => "https://api.plot.ly/v2")
 
 type PlotlyCredentials
-    username::ASCIIString
-    api_key::ASCIIString
+    username::String
+    api_key::String
 end
 
 type PlotlyConfig
-    plotly_domain::ASCIIString
-    plotly_api_domain::ASCIIString
+    plotly_domain::String
+    plotly_api_domain::String
 end
 
-function signin(username::ASCIIString, api_key::ASCIIString, endpoints=None)
+function signin(username::String, api_key::String, endpoints=nothing)
 # Define session credentials/endpoint configuration, where endpoint is a Dict
 
     global plotlycredentials = PlotlyCredentials(username, api_key)
 
     # if endpoints are specified both the base and api domains must be specified
-    if endpoints != None
+    if endpoints != nothing
         try
             base_domain = endpoints["plotly_domain"]
             api_domain = endpoints["plotly_api_domain"]
@@ -34,7 +34,7 @@ end
 function get_credentials()
 # Return the session credentials if defined --> otherwise use .credentials specs
 
-    if !isdefined(Plotly,:plotlycredentials)
+    if !isdefined(Plotly, :plotlycredentials)
 
         creds = get_credentials_file()
 
