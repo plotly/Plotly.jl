@@ -2,6 +2,7 @@
 
 module Plotly
 using Compat
+using Compat: String
 using Requests
 using JSON
 using Reexport: @reexport
@@ -9,6 +10,7 @@ import Requests: URI, post
 
 @reexport using PlotlyJS
 export post
+export set_credentials_file
 
 include("utils.jl")
 
@@ -33,14 +35,24 @@ openurl(url::URI) = openurl(string(url))
 
 get_plot_endpoint() = "$(get_config().plotly_domain)/clientresp"
 
-
+"""
+Proxy for a plot stored on the Plotly cloud.
+"""
 immutable RemotePlot
     url::URI
 end
 RemotePlot(url) = RemotePlot(URI(url))
 
+"""
+Display a plot stored in the Plotly cloud in a browser window.
+"""
 Base.open(p::RemotePlot) = openurl(p.url)
 
+"""
+Post a local Plotly plot to the Plotly cloud.
+
+Must be signed in first.
+"""
 function post(p::Plot; kwargs...)
     creds = get_credentials()
     endpoint = get_plot_endpoint()
@@ -54,7 +66,6 @@ function post(p::Plot; kwargs...)
     "kwargs" => json(opt)))
 
     r = post(endpoint, data=data)
-    # body=Requests.json(r)
     body = parse_response(r)
     return RemotePlot(URI(body["url"]))
 end
@@ -95,7 +106,11 @@ function style(style_opts, meta_opts=Dict(); meta_kwargs...)
     parse_response(post(endpoint, data=data))
 end
 
+"""
+Transport a plot from the Plotly cloud to a local `Plot` object.
 
+Must be signed in first if the plot is not public.
+"""
 function Base.download(plot::RemotePlot)
     creds = get_credentials()
     username = creds.username
@@ -111,32 +126,12 @@ function Base.download(plot::RemotePlot)
     end
     endpoint = URI(plot.url, path="$path.json")
     response = get(endpoint, headers=options)
-    return JSON.parse(Plot, bytestring(response))
-end
-
-download_plot(url) = download(RemotePlot(url))
-
-function get_required_params(required,opts)
-    # Priority given to user-inputted opts, then currentplot
-    result=Dict()
-    for p in required
-        global currentplot
-        if haskey(opts,p)
-            result[p] = opts[p]
-        elseif isdefined(Plotly,:currentplot)
-            result[p] = getfield(currentplot,symbol(p))
-        else
-            msg = string("Missing required param $(p). ",
-            "Make sure to create a plot first. ",
-            " Please refer to http://plot.ly/api")
-            error(msg)
-        end
-    end
-    result
+    local_plot = JSON.parse(Plot, bytestring(response))
+    return PlotlyJS.SyncPlot(local_plot)
 end
 
 immutable PlotlyError <: Exception
-    msg::UTF8String
+    msg::String
 end
 
 function Base.show(io::IO, err::PlotlyError)
