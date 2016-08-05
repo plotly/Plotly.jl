@@ -25,10 +25,14 @@ const default_opts = Dict{Symbol,Any}(:origin => "plot",
 
 ## Taken from https://github.com/johnmyleswhite/Vega.jl/blob/master/src/Vega.jl#L51
 # Open a URL in a browser
-function openurl(url::ASCIIString)
-    @osx_only run(`open $url`)
-    @windows_only run(`start $url`)
-    @linux_only run(`xdg-open $url`)
+function openurl(url::String)
+    if is_apple()
+        run(`open $url`)
+    elseif is_windows()
+        run(`start $url`)
+    elseif is_unix()
+        run(`xdg-open $url`)
+    end
 end
 
 openurl(url::URI) = openurl(string(url))
@@ -41,7 +45,7 @@ Proxy for a plot stored on the Plotly cloud.
 immutable RemotePlot
     url::URI
 end
-RemotePlot(url) = RemotePlot(URI(url))
+RemotePlot(url::String) = RemotePlot(URI(url))
 
 """
 Display a plot stored in the Plotly cloud in a browser window.
