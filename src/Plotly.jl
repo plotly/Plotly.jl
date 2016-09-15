@@ -91,7 +91,7 @@ function Requests.post(l::AbstractLayout, meta_opts=Dict(); meta_kwargs...)
     parse_response(post(endpoint, data=data))
 end
 
-post(p::PlotlyJS.SyncPlot) = post(p.plot)
+post(p::PlotlyJS.SyncPlot; kwargs...) = post(p.plot; kwargs...)
 
 function style(style_opts, meta_opts=Dict(); meta_kwargs...)
     creds = get_credentials()
