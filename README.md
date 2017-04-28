@@ -1,12 +1,14 @@
-# A Julia interface to the plot.ly plotting library and cloud services
+# Plotly.jl
 
 [![Build Status](https://travis-ci.org/plotly/Plotly.jl.svg)](https://travis-ci.org/plotly/Plotly.jl)
 
-## Installation
+> A Julia interface to the plot.ly plotting library and cloud services
+
+## Install
 
 Simply run `Pkg.add("Plotly")`.
 
-## Plotting
+## Usage
 
 Plotting functions provided by this package are identical to [PlotlyJS](https://github.com/spencerlyon2/PlotlyJS.jl). Please consult its [documentation](http://spencerlyon.com/PlotlyJS.jl/).
 
@@ -27,7 +29,7 @@ julia> Plotly.signin("username","your api key")
 PlotlyAccount("username","your api key")
 ```
 
-Note: you may also specify your session endpoints using signin as follows:
+Note: you may also specify your session endpoints using sign in as follows:
 
 ```julia
 julia> Plotly.signin("username","your api key",Dict("plotly_domain"=> "your_plotly_base_endpoint", "plotly_api_domain"=> "your_plotly_api_endpoint"))
@@ -68,8 +70,18 @@ local_plot = download(RemotePlot("https://plot.ly/~malmaud/73"))
 # or equivalently, local_plot = download_plot("https://plot.ly/~malmaud/73")
 ```
 
+## Acknowledgements
 
-### Acknowledgements
 [PlotlyJS.jl ](https://github.com/spencerlyon2/PlotlyJS.jl), which provides the large majority of the functionality of this package, is developed primarily by Spencer Lyon.
 
 This package, which adds to PlotlyJS.jl the functionality for interacting with the Plotly cloud, is developed by Jon Malmaud and others.
+
+## Contribute
+
+Please do! This is an open source project. Check out [the issues](https://github.com/plotly/Plotly.jl/issues) or open a PR!
+
+We want to encourage a warm, welcoming, and safe environment for contributing to this project. See the [code of conduct](CODE_OF_CONDUCT.md) for more information.
+
+## License
+
+[MIT](LICENSE.md) © 2016-2017 Shilei Zheng, Leah Hanson, Bryan A. Knowles, Chris Palmer, Jon Malmaud
