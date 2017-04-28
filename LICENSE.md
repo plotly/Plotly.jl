@@ -1,10 +1,10 @@
 The Plotly.jl package is licensed under the MIT "Expat" License:
 
-> Copyright (c) 2016:
+> Copyright (c) 2016-2017:
 >  * Shilei Zheng
 >  * Leah Hanson
 >  * Bryan A. Knowles
->  * chriddyp
+>  * Chris Palmer
 >  * Jon Malmaud
 
 > Permission is hereby granted, free of charge, to any person obtaining
