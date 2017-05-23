@@ -7,6 +7,6 @@ julia:
   - 0.6
 matrix:
   allow_failures:
-    - julia: 0.5
+    - julia: 0.6
 notifications:
   email: false
