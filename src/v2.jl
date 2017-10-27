@@ -4,11 +4,12 @@ module PlotlyV2
 # Imports/Setup #
 # ------------- #
 
-using Plotly, JSON, Requests
+using Plotly
 
 const API_ROOT = "https://api.plot.ly/v2/"
 const VERSION = string(Pkg.installed("Plotly"))
 
+import Requests
 const METHOD_MAP = Dict(
     :get => Requests.get,
     :post => Requests.post,
@@ -16,14 +17,24 @@ const METHOD_MAP = Dict(
     :delete => Requests.delete,
     :patch => Requests.patch,
 )
+function validate_response(res::Requests.Response)
+    code = Requests.statuscode(res)
+    if code > 204
+        uri = Requests.requestfor(res).uri
+        throw(PlotlyAPIError("Request $uri failed with code $code", res))
+    end
+end
 
-# import HTTP
+get_json_data(res::Requests.Response) = Requests.json(res)
+get_headers(res::Requests.Response) = Requests.headers(res)
+
+# import HTTP, JSON
 # const METHOD_MAP = Dict(
-#     :get => HTTP.get,
-#     :post => HTTP.post,
-#     :put => HTTP.put,
-#     :delete => HTTP.delete,
-#     :patch => HTTP.patch,
+#     :get => function (args...;json=Dict(), kwargs...) HTTP.get(args...; body=json, kwargs...) end,
+#     :post => function (args...;json=Dict(), kwargs...) HTTP.post(args...; body=json, kwargs...) end,
+#     :put => function (args...;json=Dict(), kwargs...) HTTP.put(args...; body=json, kwargs...) end,
+#     :delete => function (args...;json=Dict(), kwargs...) HTTP.delete(args...; body=json, kwargs...) end,
+#     :patch => function (args...;json=Dict(), kwargs...) HTTP.patch(args...; body=json, kwargs...) end,
 # )
 # function validate_response(res::HTTP.Response)
 #     if res.status > 204
@@ -32,6 +43,7 @@ const METHOD_MAP = Dict(
 #     end
 # end
 # get_json_data(res::HTTP.Response) = JSON.parse(deepcopy(res.body))
+# get_headers(res::HTTP.Response) = res.headers
 
 # --------------- #
 # Tools/Utilities #
@@ -51,16 +63,6 @@ struct PlotlyAPIError <: Exception
     res
 end
 
-function validate_response(res::Requests.Response)
-    code = Requests.statuscode(res)
-    if code > 204
-        uri = Requests.requestfor(res).uri
-        # TODO: provide meaningful error message based on request url + status
-        throw(PlotlyAPIError("Request $uri failed with code $code", res))
-    end
-end
-
-get_json_data(res::Requests.Response) = Requests.json(res)
 
 function basic_auth(username, password)
     # ref https://github.com/plotly/plotly.py/blob/master/plotly/api/utils.py
@@ -112,7 +114,7 @@ function request(method, endpoint; fid=nothing, route=nothing, json=nothing, kwa
     query_params = Dict()
     for (k, v) in kwargs
         if v !== nothing
-            query_params[k] = v
+            query_params[string(k)] = v
         end
     end
     if Symbol(method) in (:post, :patch, :put) && json !== nothing
@@ -127,7 +129,7 @@ end
 
 function request_data(method, endpoint; kwargs...)
     res = request(method, endpoint; kwargs...)
-    content_type = get(Requests.headers(res), "Content-Type", "application/json")
+    content_type = get(get_headers(res), "Content-Type", "application/json")
     if startswith(content_type, "application/json")
         return get_json_data(res)
     else
