@@ -1,8 +1,9 @@
 using JSON
 
-default_endpoints = Dict(
+const default_endpoints = Dict(
   "base" => "https://plot.ly",
-  "api" => "https://api.plot.ly/v2")
+  "api" => "https://api.plot.ly/v2"
+)
 
 type PlotlyCredentials
     username::String

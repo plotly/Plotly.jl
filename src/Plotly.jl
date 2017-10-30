@@ -1,27 +1,22 @@
 # __precompile__(true)
 
 module Plotly
-using Compat
-using Compat: String
-using Requests
-using JSON
-using Reexport: @reexport
-import Requests: URI, post
 
+using URIParser
+using Reexport
 @reexport using PlotlyJS
 export post
 export set_credentials_file, RemotePlot, download_plot
 
+const _SRC_ATTRS = let
+    _src_attr_path = joinpath(dirname(PlotlyJS._js_path), "src_attrs.csv")
+    raw_src_attrs = vec(readdlm(_src_attr_path))
+    src_attrs = map(x -> x[1:end-3], raw_src_attrs)  # remove the `src` suffix
+    Set(map(Symbol, src_attrs))
+end::Set{Symbol}
+
 include("utils.jl")
-
-const api_version = "v2"
-
-const default_kwargs = Dict{Symbol,Any}(:filename=>"Plot from Julia API",
-                                        :world_readable=> true)
-
-const default_opts = Dict{Symbol,Any}(:origin => "plot",
-                                      :platform => "Julia",
-                                      :version => "0.2")
+include("v2.jl")
 
 ## Taken from https://github.com/johnmyleswhite/Vega.jl/blob/master/src/Vega.jl#L51
 # Open a URL in a browser
@@ -37,15 +32,27 @@ end
 
 openurl(url::URI) = openurl(string(url))
 
-get_plot_endpoint() = "$(get_config().plotly_domain)/clientresp"
-
 """
 Proxy for a plot stored on the Plotly cloud.
 """
-immutable RemotePlot
+struct RemotePlot
     url::URI
 end
 RemotePlot(url::String) = RemotePlot(URI(url))
+
+"""
+    fid(rp::RemotePlot)
+
+Return the unique plotly `fid` for `rp`. Throws an error if the url inside
+`rp` is not correctly formed.
+"""
+function fid(rp::RemotePlot)
+    parts = match(r"^/~([^/]+)/(\d+)/?", rp.url.path)
+    if parts === nothing
+        error("Malformed RemotePlot url")
+    end
+    "$(parts[1]):$(parts[2])"
+end
 
 """
 Display a plot stored in the Plotly cloud in a browser window.
@@ -57,105 +64,215 @@ Post a local Plotly plot to the Plotly cloud.
 
 Must be signed in first.
 """
-function post(p::Plot; kwargs...)
-    creds = get_credentials()
-    endpoint = get_plot_endpoint()
-    opt = merge(default_kwargs, Dict(:layout => p.layout.fields),
-    Dict(kwargs))
-
-    data = merge(default_opts,
-    Dict("un" => creds.username,
-    "key" => creds.api_key,
-    "args" => json(p.data),
-    "kwargs" => json(opt)))
-
-    r = post(endpoint, data=data)
-    body = parse_response(r)
-    return RemotePlot(URI(body["url"]))
+function post(p::Plot; fileopt=:overwrite, filename=nothing, kwargs...)
+    fileopt = filename == nothing ? :create : Symbol(fileopt)
+    grid_fn = string(filename, "_", "Grid")
+    clean_p = srcify(p; fileopt=fileopt, grid_fn=grid_fn, kwargs...)
+    if fileopt == :overwrite
+        file_data = try_lookup(filename)
+        if file_data == nothing
+            fileopt = :create
+        else
+            res = plot_update(file_data["fid"], figure=clean_p)
+            return RemotePlot(res["web_url"])
+        end
+    end
+    if fileopt == :create
+        res = plot_create(clean_p; filename=filename, kwargs...)
+        return RemotePlot(res["file"]["web_url"])
+    else
+        error("fileopt must be one of `overwrite` and `create`")
+    end
 end
 
-function Requests.post(l::AbstractLayout, meta_opts=Dict(); meta_kwargs...)
+function post_v1(p::Plot; kwargs...)
+    default_kwargs = Dict{Symbol,Any}(:filename=>"Plot from Julia API",
+                                       :world_readable=> true)
+    default_opts = Dict{Symbol,Any}(:origin => "plot",
+                                     :platform => "Julia",
+                                     :version => "0.2")
     creds = get_credentials()
-    endpoint = get_plot_endpoint()
+    endpoint = "$(get_config().plotly_domain)/clientresp"
+    opt = merge(
+        default_kwargs,
+        Dict(:layout => p.layout.fields),
+        Dict(kwargs)
+    )
 
-    meta = merge(meta_opts,
-    get_required_params(["filename", "fileopt"], meta_opts),
-    Dict(meta_kwargs))
-    data = merge(default_opts,
-    Dict("un" => creds.username,
-         "key" => creds.api_key,
-         "args" => json(l),
-         "origin" => "layout",
-         "kwargs" => json(meta)))
+    data = merge(
+        default_opts,
+        Dict(
+            "un" => creds.username,
+            "key" => creds.api_key,
+            "args" => json(p.data),
+            "kwargs" => json(opt)
+        )
+    )
 
-    parse_response(post(endpoint, data=data))
+    r = post(endpoint, data=data)
+    body = Requests.json(r)
+    if Requests.statuscode(r) ≠ 200
+        throw(PlotlyError("Non-sucessful status code: $(statuscode(r))"))
+    elseif "error" ∈ keys(body) && body["error"] ≠ ""
+        throw(PlotlyError(body["error"]))
+    elseif "detail" ∈ keys(body) && body["detail"] ≠ ""
+        throw(PlotlyError(body["detail"]))
+    end
+    return RemotePlot(URI(body["url"]))
 end
 
 post(p::PlotlyJS.SyncPlot; kwargs...) = post(p.plot; kwargs...)
 
-function style(style_opts, meta_opts=Dict(); meta_kwargs...)
-    creds = get_credentials()
-    endpoint = get_plot_endpoint()
+"""
+    srcify!(p::Plot; fileopt::Symbol=:overwrite, grid_fn=nothing, kwargs...)
 
-    meta = merge(meta_opts,
-    get_required_params(["filename", "fileopt"], meta_opts),
-    Dict(meta_kwargs))
-    data = merge(default_opts,
-    Dict("un" => creds.username,
-    "key" => creds.api_key,
-    "args" => json([style_opts]),
-    "origin" => "style",
-    "kwargs" => json(meta_opts)))
+Look through each trace and the Layout for attributes that have a value of type
+Union{AbstractArray,Tuple} and are able to be set via `(attributename)(src)` in
+the plotly.js api. For each of these, do the following:
 
-    parse_response(post(endpoint, data=data))
+1. Extract the value so it can become a column in a Grid
+2. Remove that key/value pair from the trace/Layout
+
+This happens in place, so the `src`ified fields will be removed within the
+input to this function.
+"""
+function extract_grid_data!(p::Plot)
+    data_for_grid = Dict()
+    function add_to_grid!(k::Vector, v::Union{AbstractArray,Tuple})
+        if !(k[end] in Plotly._SRC_ATTRS)
+            return
+            # only do what follows if k is one of the src attrs
+        end
+        # all the magic happens here
+        the_key = join(map(string, k), "_")
+        setindex!(data_for_grid, Dict{Any,Any}("data" => v, "temp" => k), the_key)  # step 1
+
+        # now remove this from the plot
+        if k[1] == "trace"
+            ind = k[2]
+            attr = join(map(String, k[3:end]), "_")
+            pop!(p.data[ind], attr)
+        elseif k[1] == "layout"
+            attr = join(map(String, k[2:end]), "_")
+            pop!(p.layout, attr)
+        else
+            error("bad key...")
+        end
+    end
+    function add_to_grid!(k1::Vector, v::Associative)
+        for (k2, v2) in v
+            add_to_grid!(vcat(k1, k2), v2)
+        end
+    end
+    add_to_grid!(k::Vector, v) = nothing  # otherwise don't do anything...
+
+    for (i, t) in enumerate(p.data)
+        k = ["trace", i]
+        for (field, val) in t
+            add_to_grid!(vcat(k, field), val)
+        end
+    end
+
+    k = ["layout"]
+    for (field, val) in p.layout
+        add_to_grid!(vcat(k, field), val)
+    end
+    data_for_grid
 end
+
+extract_grid_data(p::Plot) = extract_grid_data!(deepcopy(p))
+
+"""
+    srcify!(p::Plot; fileopt::Symbol=:overwrite, grid_fn=nothing, kwargs...)
+
+This function does three things:
+
+1. Calls `extract_grid_data!(p)` (see docs) to remove attributes that can be
+   set via `(attributename)(src)` in the plotly.js api.
+2. Creates a grid on the plotly server containing the extract data
+3. Maps the `(attributename)(src)` attribute to the grid column
+
+If fileopt is `:create` and `grid_fn` exists under the User's plotly account,
+then the changes described above will happen in-place on the grid.
+
+If either of those conditions are not met, then a new grid will be created.
+"""
+function srcify!(p::Plot; fileopt::Symbol=:overwrite, grid_fn=nothing, kwargs...)
+    data_for_grid = extract_grid_data!(p)
+    temp_map = Dict()
+    for (k, v) in data_for_grid
+        temp_map[k] = pop!(v, "temp")
+    end
+
+    if fileopt == :overwrite
+        grid_info = try_me(grid_lookup, grid_fn )
+        fid = lookup_info["fid"]
+        if lookup_info == nothing
+            fileopt = :create
+        else
+            uid_map = grid_overwrite!(data_for_grid; fid=lookup_info["fid"])
+            @goto add_src_attrs
+        end
+    end
+
+    if fileopt == :create
+        # add order to each grid
+        for (i, (k, v)) in enumerate(data_for_grid)
+            v["order"] = i-1
+        end
+        res = grid_create(Dict("cols" => data_for_grid); filename=grid_fn, kwargs...)
+        fid = res["file"]["fid"]
+
+        uid_map = Dict()
+        for col in res["file"]["cols"]
+            uid_map[col["name"]] = col["uid"]
+        end
+    else
+        error("Can only create or overwrite")
+    end
+
+    @label add_src_attrs
+    # Add (attributename)(src) = uid fields to plot
+    for k in keys(data_for_grid)
+        key = temp_map[k]
+        uid = uid_map[k]
+        if key[1] == "trace"
+            trace_ind = key[2]
+            the_key = join(vcat(key[3:end-1], string(key[end], "src")), "_")
+            col_uid = string(fid, ":", uid)
+            p.data[trace_ind][the_key] = col_uid
+        elseif key[1] == "layout"
+            the_key = join(vcat(key[2:end-1], string(key[end], "src")), "_")
+            col_uid = string(fid, ":", uid)
+            p.layout[the_key] = col_uid
+        else
+            error("bad key...")
+        end
+    end
+    p
+end
+
+"""
+    srcify(p::Plot)
+
+Allocating version of `srcify!` the plot will be deepcopied before passing
+to `srcify!`, so the argument passed to this function will not be modified.
+"""
+srcify(p::Plot; kwargs...) = srcify!(deepcopy(p); kwargs...)
 
 """
 Transport a plot from the Plotly cloud to a local `Plot` object.
 
 Must be signed in first if the plot is not public.
 """
-function Base.download(plot::RemotePlot)
-    creds = get_credentials()
-    username = creds.username
-    api_key = creds.api_key
-    lib_version = string(default_opts[:platform], " ", default_opts[:version])
-    auth = string("Basic ", base64encode("$username:$api_key"))
-    options = Dict("Authorization"=>auth, "Plotly-Client-Platform"=>lib_version)
-    original_path = plot.url.path
-    if original_path[end] == '/'
-        path = original_path[1:end-1]
-    else
-        path = original_path
-    end
-    endpoint = URI(plot.url, path="$path.json")
-    response = get(endpoint, headers=options)
-    local_plot = JSON.parse(Plot, bytestring(response))
-    return PlotlyJS.SyncPlot(local_plot)
+function Base.download(p::RemotePlot)
+    res = plot_content(fid(p), inline_data=true)
+    data = GenericTrace[GenericTrace(tr) for tr in res["data"]]
+    layout = Layout(res["layout"])
+    plot(data, layout)
 end
 
 download_plot(url) = download(RemotePlot(url))
 download_plot(plot::RemotePlot) = download(plot)
-
-immutable PlotlyError <: Exception
-    msg::String
-end
-
-function Base.show(io::IO, err::PlotlyError)
-    print(io, "Plotly error: $(err.msg)")
-end
-
-function parse_response(r)
-    body = Requests.json(r)
-    if statuscode(r) ≠ 200
-        throw(PlotlyError("Non-sucessful status code: $(statuscode(r))"))
-    elseif "error" ∈ keys(body) && body["error"] ≠ ""
-        throw(PlotlyError(body["error"]))
-    elseif "detail" ∈ keys(body) && body["detail"] ≠ ""
-        throw(PlotlyError(body["detail"]))
-    else
-        body
-    end
-end
 
 end
