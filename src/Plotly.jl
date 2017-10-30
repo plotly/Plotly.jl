@@ -205,12 +205,12 @@ function srcify!(p::Plot; fileopt::Symbol=:overwrite, grid_fn=nothing, kwargs...
     end
 
     if fileopt == :overwrite
-        grid_info = try_me(grid_lookup, grid_fn )
-        fid = lookup_info["fid"]
-        if lookup_info == nothing
+        grid_info = try_me(grid_lookup, grid_fn)
+        fid = grid_info["fid"]
+        if grid_info == nothing
             fileopt = :create
         else
-            uid_map = grid_overwrite!(data_for_grid; fid=lookup_info["fid"])
+            uid_map = grid_overwrite!(grid_info, data_for_grid)
             @goto add_src_attrs
         end
     end
@@ -275,4 +275,34 @@ end
 download_plot(url) = download(RemotePlot(url))
 download_plot(plot::RemotePlot) = download(plot)
 
+function savefig_remote(p::Plot, fn::String, width::Int=8, height::Int=6)
+    suf = split(fn, ".")[end]
+
+    # if html we don't need a plot window
+    if suf == "html"
+        open(fn, "w") do f
+            show(f, MIME"text/html"(), p, js)
+        end
+        return p
+    end
+
+    # same for json
+    if suf == "json"
+        open(fn, "w") do f
+            print(f, json(p))
+        end
+        return p
+    end
+
+    if suf in ["png", "jpeg", "svg", "pdf", "eps", "webp"]
+        res = image_generate(p, format=suf, width=width*96, height=height*96)
+        open(fn, "w") do f
+            print(f, String(res))
+        end
+    else
+        error("Only html, json, png, jpeg, svg, pdf, eps, and webp output supported")
+    end
+    fn
 end
+
+end  # module
