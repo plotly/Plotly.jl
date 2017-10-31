@@ -349,26 +349,6 @@ end
 
 try_lookup(path; kwargs...) = try_me(file_lookup, path; kwargs...)
 
-
-"""
-    grid_overwrite(cols::Associative; fid::String="", path::String="")
-
-Replace the data in the grid assocaited with fid `fid` or at the path `path`
-with data in `cols`. `cols` should be an associative mapping from column names
-to column data. The output of this function is an associative mapping from
-column names to column uids in the updated grid.
-
-There are three possible scenarios for the data:
-
-1. The column appears both in the grid and in `cols`. In this case the data in
-   that column of the grid will be updated to match the data in `cols`
-2. The column appears only in `cols`. In this case a new column will be created
-   in the grid
-3. The column appears only in the grid. Nothing happens...
-
-NOTE: only one of `fid` and `path` can be passed
-
-"""
 function grid_overwrite!(cols::Associative; fid::String="", path::String="")
     !isempty(fid) && !isempty(path) && error("Can't pass both fid and path")
     if !isempty(fid)
@@ -380,7 +360,10 @@ function grid_overwrite!(cols::Associative; fid::String="", path::String="")
     end
 
     grid_info == nothing && error("can't overwrite a grid that doesn't exit")
+    grid_overwrite!(grid_info, cols)
+end
 
+function grid_overwrite!(grid_info::Associative, cols::Associative)
     col_name_uid = Dict()
     for col in grid_info["cols"]
         col_name_uid[col["name"]] = col["uid"]
@@ -418,3 +401,25 @@ function grid_overwrite!(cols::Associative; fid::String="", path::String="")
 
     out
 end
+
+
+"""
+    grid_overwrite(cols::Associative; fid::String="", path::String="")
+
+Replace the data in the grid assocaited with fid `fid` or at the path `path`
+with data in `cols`. `cols` should be an associative mapping from column names
+to column data. The output of this function is an associative mapping from
+column names to column uids in the updated grid.
+
+There are three possible scenarios for the data:
+
+1. The column appears both in the grid and in `cols`. In this case the data in
+   that column of the grid will be updated to match the data in `cols`
+2. The column appears only in `cols`. In this case a new column will be created
+   in the grid
+3. The column appears only in the grid. Nothing happens...
+
+NOTE: only one of `fid` and `path` can be passed
+
+"""
+grid_overwrite!

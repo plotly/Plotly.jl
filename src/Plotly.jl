@@ -63,8 +63,8 @@ Post a local Plotly plot to the Plotly cloud.
 
 Must be signed in first.
 """
-function post(p::Plot; fileopt=:overwrite, filename=nothing, kwargs...)
-    fileopt = filename == nothing ? :create : Symbol(fileopt)
+function post(p::Plot; fileopt=get_config().fileopt, filename=nothing, kwargs...)
+    fileopt = Symbol(fileopt)
     grid_fn = string(filename, "_", "Grid")
     clean_p = srcify(p; fileopt=fileopt, grid_fn=grid_fn, kwargs...)
     if fileopt == :overwrite
@@ -76,7 +76,7 @@ function post(p::Plot; fileopt=:overwrite, filename=nothing, kwargs...)
             return RemotePlot(res["web_url"])
         end
     end
-    if fileopt == :create
+    if fileopt == :create || fileopt == :new
         if filename == nothing
             res = plot_create(clean_p; kwargs...)
         else
@@ -195,7 +195,7 @@ end
 extract_grid_data(p::Plot) = extract_grid_data!(deepcopy(p))
 
 """
-    srcify!(p::Plot; fileopt::Symbol=:overwrite, grid_fn=nothing, kwargs...)
+    srcify!(p::Plot; fileopt::Symbol=get_config().fileopt, grid_fn=nothing, kwargs...)
 
 This function does three things:
 
@@ -209,7 +209,7 @@ then the changes described above will happen in-place on the grid.
 
 If either of those conditions are not met, then a new grid will be created.
 """
-function srcify!(p::Plot; fileopt::Symbol=:overwrite, grid_fn=nothing, kwargs...)
+function srcify!(p::Plot; fileopt::Symbol=get_config().fileopt, grid_fn=nothing, kwargs...)
     data_for_grid = extract_grid_data!(p)
     temp_map = Dict()
     for (k, v) in data_for_grid
@@ -227,7 +227,7 @@ function srcify!(p::Plot; fileopt::Symbol=:overwrite, grid_fn=nothing, kwargs...
         end
     end
 
-    if fileopt == :create
+    if fileopt == :create || fileopt == :new
         # add order to each grid
         for (i, (k, v)) in enumerate(data_for_grid)
             v["order"] = i-1
