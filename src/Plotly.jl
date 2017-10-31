@@ -5,8 +5,7 @@ module Plotly
 using URIParser
 using Reexport
 @reexport using PlotlyJS
-export post
-export set_credentials_file, RemotePlot, download_plot
+export set_credentials_file, RemotePlot, download_plot, savefig_remote, post
 
 const _SRC_ATTRS = let
     _src_attr_path = joinpath(dirname(PlotlyJS._js_path), "src_attrs.csv")
@@ -78,7 +77,20 @@ function post(p::Plot; fileopt=:overwrite, filename=nothing, kwargs...)
         end
     end
     if fileopt == :create
-        res = plot_create(clean_p; filename=filename, kwargs...)
+        if filename == nothing
+            res = plot_create(clean_p; kwargs...)
+        else
+            parent_path = dirname(filename)
+            if !isempty(parent_path)
+                res = plot_create(
+                    clean_p; parent_path=parent_path,
+                    filename=basename(filename), kwargs...
+                )
+            else
+                res = plot_create(clean_p; filename=filename, kwargs...)
+            end
+        end
+
         return RemotePlot(res["file"]["web_url"])
     else
         error("fileopt must be one of `overwrite` and `create`")
@@ -206,10 +218,10 @@ function srcify!(p::Plot; fileopt::Symbol=:overwrite, grid_fn=nothing, kwargs...
 
     if fileopt == :overwrite
         grid_info = try_me(grid_lookup, grid_fn)
-        fid = grid_info["fid"]
         if grid_info == nothing
             fileopt = :create
         else
+            fid = grid_info["fid"]
             uid_map = grid_overwrite!(grid_info, data_for_grid)
             @goto add_src_attrs
         end
@@ -220,7 +232,17 @@ function srcify!(p::Plot; fileopt::Symbol=:overwrite, grid_fn=nothing, kwargs...
         for (i, (k, v)) in enumerate(data_for_grid)
             v["order"] = i-1
         end
-        res = grid_create(Dict("cols" => data_for_grid); filename=grid_fn, kwargs...)
+        parent_path = dirname(grid_fn)
+        if !isempty(parent_path)
+            root_name = basename(grid_fn)
+            res = grid_create(
+                Dict("cols" => data_for_grid);
+                parent_path=parent_path, filename=root_name, kwargs...
+            )
+        else
+            res = grid_create(Dict("cols" => data_for_grid); filename=grid_fn, kwargs...)
+        end
+
         fid = res["file"]["fid"]
 
         uid_map = Dict()
@@ -275,7 +297,7 @@ end
 download_plot(url) = download(RemotePlot(url))
 download_plot(plot::RemotePlot) = download(plot)
 
-function savefig_remote(p::Plot, fn::String, width::Int=8, height::Int=6)
+function savefig_remote(p::Plot, fn::String; width::Int=8, height::Int=6)
     suf = split(fn, ".")[end]
 
     # if html we don't need a plot window
@@ -303,6 +325,10 @@ function savefig_remote(p::Plot, fn::String, width::Int=8, height::Int=6)
         error("Only html, json, png, jpeg, svg, pdf, eps, and webp output supported")
     end
     fn
+end
+
+function savefig_remote(p::PlotlyJS.SyncPlot, args...;kwargs...)
+    savefig_remote(p.plot, args...; kwargs...)
 end
 
 end  # module
