@@ -8,7 +8,7 @@ using Reexport
 export set_credentials_file, RemotePlot, download_plot, savefig_remote, post
 
 const _SRC_ATTRS = let
-    _src_attr_path = joinpath(dirname(PlotlyJS._js_path), "src_attrs.csv")
+    _src_attr_path = joinpath(PlotlyJS._pkg_root, "deps", "src_attrs.csv")
     raw_src_attrs = vec(readdlm(_src_attr_path))
     src_attrs = map(x -> x[1:end-3], raw_src_attrs)  # remove the `src` suffix
     Set(map(Symbol, src_attrs))
@@ -98,8 +98,9 @@ function post(p::Plot; fileopt=get_config().fileopt, filename=nothing, kwargs...
 end
 
 function post_v1(p::Plot; kwargs...)
+    config = get_config()
     default_kwargs = Dict{Symbol,Any}(:filename=>"Plot from Julia API",
-                                       :world_readable=> true)
+                                       :world_readable=> config.world_readable)
     default_opts = Dict{Symbol,Any}(:origin => "plot",
                                      :platform => "Julia",
                                      :version => "0.2")
@@ -134,6 +135,7 @@ function post_v1(p::Plot; kwargs...)
 end
 
 post(p::PlotlyJS.SyncPlot; kwargs...) = post(p.plot; kwargs...)
+post_v1(p::PlotlyJS.SyncPlot; kwargs...) = post_v1(p.plot; kwargs...)
 
 """
     srcify!(p::Plot; fileopt::Symbol=:overwrite, grid_fn=nothing, kwargs...)
