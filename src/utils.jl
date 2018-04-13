@@ -1,4 +1,6 @@
-using JSON
+struct PlotlyError
+    msg::String
+end
 
 struct PlotlyCredentials
     username::String

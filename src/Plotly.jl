@@ -4,6 +4,7 @@ module Plotly
 
 using URIParser
 using Reexport
+using JSON
 @reexport using PlotlyJS
 export set_credentials_file, RemotePlot, download_plot, savefig_remote, post
 
@@ -64,6 +65,7 @@ Post a local Plotly plot to the Plotly cloud.
 Must be signed in first.
 """
 function post(p::Plot; fileopt=get_config().fileopt, filename=nothing, kwargs...)
+    JSON.lower(p)
     fileopt = Symbol(fileopt)
     grid_fn = string(filename, "_", "Grid")
     clean_p = srcify(p; fileopt=fileopt, grid_fn=grid_fn, kwargs...)
@@ -98,6 +100,8 @@ function post(p::Plot; fileopt=get_config().fileopt, filename=nothing, kwargs...
 end
 
 function post_v1(p::Plot; kwargs...)
+    # call JSON.lower to apply themes
+    JSON.lower(p)
     config = get_config()
     default_kwargs = Dict{Symbol,Any}(:filename=>"Plot from Julia API",
                                        :world_readable=> config.world_readable)

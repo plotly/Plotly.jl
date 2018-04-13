@@ -254,6 +254,9 @@ file_writeable_metadata = [
     :parent_path, :filename, :parent, :share_key_enabled, :world_readable
 ]
 grid_writable_metadata = vcat(file_writeable_metadata, [:])
+dashboard_writeable_metadata = [
+    :content, :filename, :parent, :parent_path, :world_readable
+]
 for _api in [
         # search
         ApiCall(:search_list, :get, :search, false, required=[:q])
@@ -327,6 +330,16 @@ for _api in [
         # comments
         ApiCall(:comment_create, :post, :comments, false, required_json=[:fid, :comment])
         ApiCall(:comment_delete, :delete, :comments, true)
+
+        # dashboards
+        ApiCall(:dashboard_create, :post, :dashboards, false, required_json=[:content])
+        ApiCall(:dashboard_list, :get, :dashboards, false)
+        ApiCall(:dashboard_retrieve, :get, :dashboards, true)
+        ApiCall(:dashboard_update, :put, :dashboards, true, json=dashboard_writeable_metadata)
+        ApiCall(:dashboard_partial_update, :patch, :dashboards, true, json=dashboard_writeable_metadata)
+        ApiCall(:dashboard_trash, :post, :dashboards, true, :trash)
+        ApiCall(:dashboard_permanent_delete, :delete, :dashboards, true, :permanent_delete, data_out=false)
+        ApiCall(:dashboard_schema, :get, :dashboards, false, :schema)
 
         # plot-schema
         ApiCall(:plot_schema_get, :get, Symbol("plot-schema"), required=[:sha1])
