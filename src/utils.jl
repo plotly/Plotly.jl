@@ -31,16 +31,19 @@ const DEFAULT_CONFIG = PlotlyConfig(
     :create
 )
 
-function Base.merge(config::PlotlyConfig, other::Associative)
+function Base.merge(config::PlotlyConfig, other::AbstractDict)
     PlotlyConfig(
-        [get(other, string(name), getfield(config, name)) for name in fieldnames(config)]...
+        [
+            get(other, string(name), getfield(config, name))
+            for name in fieldnames(PlotlyConfig)
+        ]...
     )
 end
 
-Base.show(io::IO, config::PlotlyConfig) = dump(IOContext(io, limit=true), config)
+Base.show(io::IO, config::PlotlyConfig) = dump(IOContext(io, :limit=>true), config)
 
 function Base.Dict(config::PlotlyConfig)
-    Dict(k => getfield(config, k) for k in fieldnames(config))
+    Dict(k => getfield(config, k) for k in fieldnames(PlotlyConfig))
 end
 
 """
@@ -48,16 +51,17 @@ end
 
 Define session credentials/endpoint configuration, where endpoint is a Dict
 """
-function signin(username::String, api_key::String, endpoints::Union{Void,Associative}=nothing)
+function signin(
+        username::String, api_key::String,
+        endpoints::Union{Nothing,AbstractDict}=nothing
+    )
     global plotlycredentials = PlotlyCredentials(username, api_key)
 
     # if endpoints are specified both the base and api domains must be
     # specified
     if endpoints != nothing
         try
-            base_domain = endpoints["plotly_domain"]
-            api_domain = endpoints["plotly_api_domain"]
-            global plotlyconfig = PlotlyConfig(base_domain, api_domain)
+            merge(DEFAULT_CONFIG, endpoints)
         catch
             error("You must specify both the base and api endpoints.")
         end
@@ -72,7 +76,7 @@ Return the session credentials if defined --> otherwise use .credentials specs
 function get_credentials()
     if !isdefined(Plotly, :plotlycredentials)
 
-        creds = get_credentials_file()
+        creds = merge(get_credentials_file(), get_credentials_env())
 
         try
             username = creds["username"]
@@ -106,12 +110,12 @@ function get_config()
 end
 
 """
-    set_credentials_file(input_creds::Associative)
+    set_credentials_file(input_creds::AbstractDict)
 
 Save Plotly endpoint configuration as JSON key-value pairs in
 userhome/.plotly/.credentials. This includes username and api_key.
 """
-function set_credentials_file(input_creds::Associative)
+function set_credentials_file(input_creds::AbstractDict)
     credentials_folder = joinpath(homedir(), ".plotly")
     credentials_file = joinpath(credentials_folder, ".credentials")
 
@@ -128,13 +132,13 @@ function set_credentials_file(input_creds::Associative)
 end
 
 """
-    set_config_file(input_config::Associative)
+    set_config_file(input_config::AbstractDict)
 
 Save Plotly endpoint configuration as JSON key-value pairs in
 userhome/.plotly/.config. This includes the plotly_domain, and
 plotly_api_domain.
 """
-function set_config_file(input_config::Associative)
+function set_config_file(input_config::AbstractDict)
     config_folder = joinpath(homedir(), ".plotly")
     config_file = joinpath(config_folder, ".config")
 
@@ -165,6 +169,20 @@ Load user credentials informaiton as a dict
 function get_credentials_file()
     cred_file = joinpath(homedir(), ".plotly", ".credentials")
     isfile(cred_file) ? JSON.parsefile(cred_file) : Dict()
+end
+
+function get_credentials_env()
+    out = Dict()
+    keymap = Dict(
+        "PLOTLY_USERNAME" => "username",
+        "PLOTLY_APIKEY" => "api_key",
+    )
+    for k in ["PLOTLY_USERNAME", "PLOTLY_APIKEY"]
+        if haskey(ENV, k)
+            out[keymap[k]] = ENV[k]
+        end
+    end
+    out
 end
 
 """

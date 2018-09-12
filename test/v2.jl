@@ -55,7 +55,7 @@ end
     uid2 = "8c7b60"
 
     res_retrieve = M.grid_retrieve_raw(fid)
-    res_retrieve.headers["Content-Type"]
+    @test Dict(res_retrieve.headers)["Content-Type"] == "application/json"
     @test 200 == statuscode(res_retrieve)
     json_retrieve = M.get_json_data(res_retrieve)
 

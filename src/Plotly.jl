@@ -1,11 +1,11 @@
-# __precompile__(true)
-
 module Plotly
 
-using URIParser
+using HTTP
 using Reexport
 using JSON
 @reexport using PlotlyJS
+using DelimitedFiles, Pkg, Base64  # stdlib
+
 export set_credentials_file, RemotePlot, download_plot, savefig_remote, post
 
 const _SRC_ATTRS = let
@@ -30,15 +30,15 @@ function openurl(url::String)
     end
 end
 
-openurl(url::URI) = openurl(string(url))
+openurl(url::HTTP.URI) = openurl(string(url))
 
 """
 Proxy for a plot stored on the Plotly cloud.
 """
 struct RemotePlot
-    url::URI
+    url::HTTP.URI
 end
-RemotePlot(url::String) = RemotePlot(URI(url))
+RemotePlot(url::String) = RemotePlot(HTTP.URI(url))
 
 """
     fid(rp::RemotePlot)
@@ -60,36 +60,36 @@ Display a plot stored in the Plotly cloud in a browser window.
 Base.open(p::RemotePlot) = openurl(p.url)
 
 """
-Post a local Plotly plot to the Plotly cloud.
+Post a local Plotly plot to the Plotly cloud using V2 api.
 
-Must be signed in first.
+Must be signed in first. See `Plotly.signin` for details on how to do that
 """
-function post(p::Plot; fileopt=get_config().fileopt, filename=nothing, kwargs...)
+function post_v2(p::Plot; fileopt=get_config().fileopt, filename=nothing, kwargs...)
     JSON.lower(p)
     fileopt = Symbol(fileopt)
     grid_fn = string(filename, "_", "Grid")
     clean_p = srcify(p; fileopt=fileopt, grid_fn=grid_fn, kwargs...)
     if fileopt == :overwrite
-        file_data = try_lookup(filename)
+        file_data = try_lookup(filename)  ## Api call 1
         if file_data == nothing
             fileopt = :create
         else
-            res = plot_update(file_data["fid"], figure=clean_p)
+            res = plot_update(file_data["fid"], figure=clean_p)  ## Api call 2
             return RemotePlot(res["web_url"])
         end
     end
     if fileopt == :create || fileopt == :new
         if filename == nothing
-            res = plot_create(clean_p; kwargs...)
+            res = plot_create(clean_p; kwargs...)  ## Api call 2 (or 1)
         else
             parent_path = dirname(filename)
             if !isempty(parent_path)
                 res = plot_create(
                     clean_p; parent_path=parent_path,
                     filename=basename(filename), kwargs...
-                )
+                ) ## Api call 2 (or 1)
             else
-                res = plot_create(clean_p; filename=filename, kwargs...)
+                res = plot_create(clean_p; filename=filename, kwargs...) ## Api call 2 (or 1)
             end
         end
 
@@ -99,7 +99,7 @@ function post(p::Plot; fileopt=get_config().fileopt, filename=nothing, kwargs...
     end
 end
 
-function post_v1(p::Plot; kwargs...)
+function post(p::Plot; kwargs...)
     # call JSON.lower to apply themes
     JSON.lower(p)
     config = get_config()
@@ -119,27 +119,29 @@ function post_v1(p::Plot; kwargs...)
     data = merge(
         default_opts,
         Dict(
-            "un" => creds.username,
-            "key" => creds.api_key,
-            "args" => json(p.data),
-            "kwargs" => json(opt)
+            :un => creds.username,
+            :key => creds.api_key,
+            :args => JSON.json(p.data),
+            :kwargs => JSON.json(opt)
         )
     )
 
-    r = post(endpoint, data=data)
-    body = Requests.json(r)
-    if Requests.statuscode(r) ≠ 200
+    res = HTTP.request("POST", endpoint,
+                       ["Content-Type" => "application/x-www-form-urlencoded"],
+                       HTTP.URIs.escapeuri(data))
+    body = JSON.parse(String(deepcopy(res.body)))
+    if res.status ≠ 200
         throw(PlotlyError("Non-sucessful status code: $(statuscode(r))"))
     elseif "error" ∈ keys(body) && body["error"] ≠ ""
         throw(PlotlyError(body["error"]))
     elseif "detail" ∈ keys(body) && body["detail"] ≠ ""
         throw(PlotlyError(body["detail"]))
     end
-    return RemotePlot(URI(body["url"]))
+    return RemotePlot(HTTP.URI(body["url"]))
 end
 
 post(p::PlotlyJS.SyncPlot; kwargs...) = post(p.plot; kwargs...)
-post_v1(p::PlotlyJS.SyncPlot; kwargs...) = post_v1(p.plot; kwargs...)
+post_v2(p::PlotlyJS.SyncPlot; kwargs...) = post_v2(p.plot; kwargs...)
 
 """
     srcify!(p::Plot; fileopt::Symbol=:overwrite, grid_fn=nothing, kwargs...)
@@ -177,7 +179,7 @@ function extract_grid_data!(p::Plot)
             error("bad key...")
         end
     end
-    function add_to_grid!(k1::Vector, v::Associative)
+    function add_to_grid!(k1::Vector, v::AbstractDict)
         for (k2, v2) in v
             add_to_grid!(vcat(k1, k2), v2)
         end

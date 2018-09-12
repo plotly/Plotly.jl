@@ -3,73 +3,22 @@
 # ------------- #
 
 const API_ROOT = "https://api.plot.ly/v2/"
-const _VERSION = string(Pkg.installed("Plotly"))
+const _VERSION = string(Pkg.installed()["Plotly"])
 import JSON: json
-
-import Requests
-import Requests: post
-const METHOD_MAP = Dict(
-    :get => Requests.get,
-    :post => Requests.post,
-    :put => Requests.put,
-    :delete => Requests.delete,
-    :patch => Requests.patch,
-)
-function validate_response(res::Requests.Response)
-    code = Requests.statuscode(res)
-    if code > 204
-        uri = Requests.requestfor(res).uri
-        throw(PlotlyAPIError("Request $uri failed with code $code", res))
+import HTTP, JSON
+import HTTP: post
+function validate_response(res::HTTP.Response)
+    if res.status > 204
+        url = res.request.headers["Host"] * "/" * res.request.target
+        throw(PlotlyAPIError("Request $uri failed with code $(res.status)", res))
     end
 end
-
-get_json_data(res::Requests.Response) = Requests.json(res)
-get_headers(res::Requests.Response) = Requests.headers(res)
-
-# import HTTP, JSON
-# import HTTP: post
-# function from_requests_api(f)
-#     function(args...; json=nothing, kwargs...)
-#         if json != nothing
-#             if json == Dict()
-#                 f(args...; statusraise=false, body="{}", kwargs...)
-#             else
-#                 f(args...; statusraise=false, body=JSON.json(json), kwargs...)
-#             end
-#         else
-#             f(args...; statusraise=false, kwargs...)
-#         end
-#     end
-# end
-# const METHOD_MAP = Dict(
-#     :get => from_requests_api(HTTP.get),
-#     :post => from_requests_api(HTTP.post),
-#     :put => from_requests_api(HTTP.put),
-#     :delete => from_requests_api(HTTP.delete),
-#     :patch => from_requests_api(HTTP.patch),
-# )
-# function validate_response(res::HTTP.Response)
-#     if res.status > 204
-#         uri = get(res.request).uri
-#         throw(PlotlyAPIError("Request $uri failed with code $(res.status)", res))
-#     end
-# end
-# get_json_data(res::HTTP.Response) = JSON.parse(deepcopy(res.body))
-# get_headers(res::HTTP.Response) = res.headers
+get_json_data(res::HTTP.Response) = JSON.parse(String(res.body))
+get_headers(res::HTTP.Response) = res.headers
 
 # --------------- #
 # Tools/Utilities #
 # --------------- #
-
-function get_method(method::Symbol)
-    if haskey(METHOD_MAP, method)
-        return METHOD_MAP[method]
-    else
-        error("Unkown method type $method requested")
-    end
-end
-get_method(s::String) = get_method(Symbol(s))
-
 struct PlotlyAPIError <: Exception
     msg
     res
@@ -81,7 +30,7 @@ function basic_auth(username, password)
     return string("Basic ", base64encode(string(username, ":", password)))
 end
 
-function get_headers(method::Symbol=:get)
+function get_req_headers()
     creds = get_credentials()
     return Dict{Any,Any}(
         "Plotly-Client-Platform" => "Julia $(_VERSION)",
@@ -91,7 +40,6 @@ function get_headers(method::Symbol=:get)
         "authorization" => basic_auth(creds.username, creds.api_key),
     )
 end
-get_headers(s::String) = get_headers(Symbol(s))
 
 function get_json(;kwargs...)
     out = Dict()
@@ -122,26 +70,24 @@ end
 
 function request(method, endpoint; fid=nothing, route=nothing, json=nothing, kwargs...)
     url = api_url(endpoint; fid=fid, route=route)
-    method_func = get_method(method)
     query_params = Dict()
     for (k, v) in kwargs
         if v !== nothing
             query_params[string(k)] = v
         end
     end
-    if Symbol(method) in (:post, :patch, :put) && json !== nothing
-        # here I am!
-        res = method_func(url, headers=get_headers(method), query=query_params, json=json)
-    else
-        res = method_func(url, headers=get_headers(method), query=query_params)
-    end
+    # build kwargs for HTTP.request
+    kw = Any[:query => query_params, :headers => get_req_headers()]
+    json !== nothing && push!(kw, :body => JSON.json(json))
+
+    res = HTTP.request(method, url; kw...)
     validate_response(res)
     res
 end
 
 function request_data(method, endpoint; kwargs...)
     res = request(method, endpoint; kwargs...)
-    content_type = get(get_headers(res), "Content-Type", "application/json")
+    content_type = get(Dict(get_headers(res)), "Content-Type", "application/json")
     if startswith(content_type, "application/json")
         return get_json_data(res)
     else
@@ -158,7 +104,7 @@ struct ApiCall
     method::Symbol
     endpoint::Symbol
     fid::Bool
-    route::Union{Void,Symbol}
+    route::Union{Nothing,Symbol}
     required::Vector{Symbol}
     optional::Vector{Symbol}
     json::Vector{Symbol}
@@ -218,7 +164,7 @@ function make_method(api::ApiCall)
 
     if length(call_get_json.args) > 1  # we had some json args
         push!(request_kwargs, Expr(:kw, :json, call_get_json))
-    elseif api.method in (:put, :post, :patch, :delete)
+    elseif api.method in (:PUT, :POST, :PATCH, :delete)
         # need to add empty json argument on put these request methods when
         # no json data is needed.
         push!(request_kwargs, Expr(:kw, :json, :(Dict())))
@@ -259,92 +205,92 @@ dashboard_writeable_metadata = [
 ]
 for _api in [
         # search
-        ApiCall(:search_list, :get, :search, false, required=[:q])
+        ApiCall(:search_list, :GET, :search, false, required=[:q])
 
         # files
-        ApiCall(:file_retrieve, :get, :files, true)
-        ApiCall(:file_content, :get, :files, true, :content)  # failing
-        ApiCall(:file_update, :put, :files, true, json=file_writeable_metadata)
-        ApiCall(:file_partial_update, :patch, :files, true, json=file_writeable_metadata)
-        ApiCall(:file_image, :get, :files, true, :image)
-        ApiCall(:file_copy, :get, :files, true, :copy, optional=[:deep_copy])  # failing
-        ApiCall(:file_path, :get, :files, true, :path)
-        ApiCall(:file_drop_reference, :post, :files, true, :drop_reference, json=[:fid])
-        ApiCall(:file_trash, :post, :files, true, :trash)
-        ApiCall(:file_restore, :post, :files, true, :restore)
-        ApiCall(:file_permanent_delete, :post, :files, true, :permanent_delete, data_out=false)
-        ApiCall(:file_lookup, :get, :files, false, :lookup, required=[:path], optional=[:parent, :user, :exists])
-        ApiCall(:file_star, :post, :files, true, :star)
-        ApiCall(:file_remove_star, :delete, :files, true, :star, data_out=false)
-        ApiCall(:file_sources, :get, :files, true, :sources)
+        ApiCall(:file_retrieve, :GET, :files, true)
+        ApiCall(:file_content, :GET, :files, true, :content)  # failing
+        ApiCall(:file_update, :PUT, :files, true, json=file_writeable_metadata)
+        ApiCall(:file_partial_update, :PATCH, :files, true, json=file_writeable_metadata)
+        ApiCall(:file_image, :GET, :files, true, :image)
+        ApiCall(:file_copy, :GET, :files, true, :copy, optional=[:deep_copy])  # failing
+        ApiCall(:file_path, :GET, :files, true, :path)
+        ApiCall(:file_drop_reference, :POST, :files, true, :drop_reference, json=[:fid])
+        ApiCall(:file_trash, :POST, :files, true, :trash)
+        ApiCall(:file_restore, :POST, :files, true, :restore)
+        ApiCall(:file_permanent_delete, :POST, :files, true, :permanent_delete, data_out=false)
+        ApiCall(:file_lookup, :GET, :files, false, :lookup, required=[:path], optional=[:parent, :user, :exists])
+        ApiCall(:file_star, :POST, :files, true, :star)
+        ApiCall(:file_remove_star, :DELETE, :files, true, :star, data_out=false)
+        ApiCall(:file_sources, :GET, :files, true, :sources)
 
         # grids
-        ApiCall(:grid_create, :post, :grids, false, required_json=[:data], json=file_writeable_metadata)
+        ApiCall(:grid_create, :POST, :grids, false, required_json=[:data], json=file_writeable_metadata)
         # ApiCall(:grid_upload)  # failing
-        ApiCall(:grid_row, :post, :grids, true, :row, required_json=[:rows], data_out=false)
-        ApiCall(:grid_get_col, :get, :grids, true, :col, uids=true)
-        ApiCall(:grid_put_col, :put, :grids, true, :col, uids=true, required_pre_json=[:cols])
-        ApiCall(:grid_post_col, :post, :grids, true, :col, required_pre_json=[:cols])
-        ApiCall(:grid_retrieve, :get, :grids, true)
-        ApiCall(:grid_content, :get, :grids, true, :content)
-        ApiCall(:grid_destroy, :delete, :grids, true, data_out=false)
-        ApiCall(:grid_partial_update, :patch, :grids, true, json=file_writeable_metadata)
-        ApiCall(:grid_update, :put, :grids, true, json=file_writeable_metadata)
-        ApiCall(:grid_drop_reference, :post, :grids, true, :drop_reference, json=[:fid])
-        ApiCall(:grid_trash, :post, :grids, true, :trash)
-        ApiCall(:grid_restore, :post, :grids, true, :restore)
-        ApiCall(:grid_permanent_delete, :post, :grids, true, :permanent_delete, data_out=false)
-        ApiCall(:grid_lookup, :get, :grids, false, :lookup, required=[:path], optional=[:parent, :user, :exists])
+        ApiCall(:grid_row, :POST, :grids, true, :row, required_json=[:rows], data_out=false)
+        ApiCall(:grid_get_col, :GET, :grids, true, :col, uids=true)
+        ApiCall(:grid_put_col, :PUT, :grids, true, :col, uids=true, required_pre_json=[:cols])
+        ApiCall(:grid_post_col, :POST, :grids, true, :col, required_pre_json=[:cols])
+        ApiCall(:grid_retrieve, :GET, :grids, true)
+        ApiCall(:grid_content, :GET, :grids, true, :content)
+        ApiCall(:grid_destroy, :DELETE, :grids, true, data_out=false)
+        ApiCall(:grid_partial_update, :PATCH, :grids, true, json=file_writeable_metadata)
+        ApiCall(:grid_update, :PUT, :grids, true, json=file_writeable_metadata)
+        ApiCall(:grid_drop_reference, :POST, :grids, true, :drop_reference, json=[:fid])
+        ApiCall(:grid_trash, :POST, :grids, true, :trash)
+        ApiCall(:grid_restore, :POST, :grids, true, :restore)
+        ApiCall(:grid_permanent_delete, :POST, :grids, true, :permanent_delete, data_out=false)
+        ApiCall(:grid_lookup, :GET, :grids, false, :lookup, required=[:path], optional=[:parent, :user, :exists])
 
         # plots
-        ApiCall(:plot_list, :get, :plots, false, optional=[:order_by, :min_quality, :max_quality])
-        ApiCall(:plot_feed, :get, :plots, false, :feed)
-        ApiCall(:plot_create, :post, :plots, false; required_json=[:figure], json=file_writeable_metadata)
-        ApiCall(:plot_detail, :get, :plots, true)
-        ApiCall(:plot_content, :get, :plots, true, :content, optional=[:inline_data, :map_data])
-        ApiCall(:plot_update, :put, :plots, true, json=vcat(file_writeable_metadata, :figure))
-        ApiCall(:plot_partial_update, :patch, :plots, true, json=file_writeable_metadata)
+        ApiCall(:plot_list, :GET, :plots, false, optional=[:order_by, :min_quality, :max_quality])
+        ApiCall(:plot_feed, :GET, :plots, false, :feed)
+        ApiCall(:plot_create, :POST, :plots, false; required_json=[:figure], json=file_writeable_metadata)
+        ApiCall(:plot_detail, :GET, :plots, true)
+        ApiCall(:plot_content, :GET, :plots, true, :content, optional=[:inline_data, :map_data])
+        ApiCall(:plot_update, :PUT, :plots, true, json=vcat(file_writeable_metadata, :figure))
+        ApiCall(:plot_partial_update, :PATCH, :plots, true, json=file_writeable_metadata)
 
         # extras
-        ApiCall(:extra_create, :post, :extras, false, required_json=[:referencers], json=[:filename, :content])
-        ApiCall(:extra_content, :post, :extras, true, :content)
-        ApiCall(:extra_partial_update, :patch, :extras, true, json=[:filename, :content])
-        ApiCall(:extra_delete, :delete, :extras, true, data_out=false)
-        ApiCall(:extra_detail, :get, :extras, true)
+        ApiCall(:extra_create, :POST, :extras, false, required_json=[:referencers], json=[:filename, :content])
+        ApiCall(:extra_content, :POST, :extras, true, :content)
+        ApiCall(:extra_partial_update, :PATCH, :extras, true, json=[:filename, :content])
+        ApiCall(:extra_delete, :DELETE, :extras, true, data_out=false)
+        ApiCall(:extra_detail, :GET, :extras, true)
 
         # folders
-        ApiCall(:folder_create, :post, :folders, false, required_json=[:path], json=[:parent])
-        ApiCall(:folder_detail, :get, :folders, true)
-        ApiCall(:folder_home, :get, :folders, false, :home, optional=[:user])
-        ApiCall(:folder_shared, :get, :folders, false, :shared)
-        ApiCall(:folder_starred, :get, :folders, false, :starred)
-        ApiCall(:folder_trashed, :get, :folders, false, :trashed)
-        ApiCall(:folder_all, :get, :folders, false, :all, optional=[:user, :filetype, :order_by])
-        ApiCall(:folder_trash, :post, :folders, true, :trash)
-        ApiCall(:folder_restore, :post, :folders, true, :restore)
-        ApiCall(:folder_permanent_delete, :post, :folders, true, :permanent_delete)
+        ApiCall(:folder_create, :POST, :folders, false, required_json=[:path], json=[:parent])
+        ApiCall(:folder_detail, :GET, :folders, true)
+        ApiCall(:folder_home, :GET, :folders, false, :home, optional=[:user])
+        ApiCall(:folder_shared, :GET, :folders, false, :shared)
+        ApiCall(:folder_starred, :GET, :folders, false, :starred)
+        ApiCall(:folder_trashed, :GET, :folders, false, :trashed)
+        ApiCall(:folder_all, :GET, :folders, false, :all, optional=[:user, :filetype, :order_by])
+        ApiCall(:folder_trash, :POST, :folders, true, :trash)
+        ApiCall(:folder_restore, :POST, :folders, true, :restore)
+        ApiCall(:folder_permanent_delete, :POST, :folders, true, :permanent_delete)
 
         # images
-        ApiCall(:image_generate, :post, :images, false, required_json=[:figure], json=[:width, :height, :format, :scale, :encoded])
+        ApiCall(:image_generate, :POST, :images, false, required_json=[:figure], json=[:width, :height, :format, :scale, :encoded])
 
         # comments
-        ApiCall(:comment_create, :post, :comments, false, required_json=[:fid, :comment])
-        ApiCall(:comment_delete, :delete, :comments, true)
+        ApiCall(:comment_create, :POST, :comments, false, required_json=[:fid, :comment])
+        ApiCall(:comment_delete, :DELETE, :comments, true)
 
         # dashboards
-        ApiCall(:dashboard_create, :post, :dashboards, false, required_json=[:content])
-        ApiCall(:dashboard_list, :get, :dashboards, false)
-        ApiCall(:dashboard_retrieve, :get, :dashboards, true)
-        ApiCall(:dashboard_update, :put, :dashboards, true, json=dashboard_writeable_metadata)
-        ApiCall(:dashboard_partial_update, :patch, :dashboards, true, json=dashboard_writeable_metadata)
-        ApiCall(:dashboard_trash, :post, :dashboards, true, :trash)
-        ApiCall(:dashboard_permanent_delete, :delete, :dashboards, true, :permanent_delete, data_out=false)
-        ApiCall(:dashboard_schema, :get, :dashboards, false, :schema)
+        ApiCall(:dashboard_create, :POST, :dashboards, false, required_json=[:content])
+        ApiCall(:dashboard_list, :GET, :dashboards, false)
+        ApiCall(:dashboard_retrieve, :GET, :dashboards, true)
+        ApiCall(:dashboard_update, :PUT, :dashboards, true, json=dashboard_writeable_metadata)
+        ApiCall(:dashboard_partial_update, :PATCH, :dashboards, true, json=dashboard_writeable_metadata)
+        ApiCall(:dashboard_trash, :POST, :dashboards, true, :trash)
+        ApiCall(:dashboard_permanent_delete, :DELETE, :dashboards, true, :permanent_delete, data_out=false)
+        ApiCall(:dashboard_schema, :GET, :dashboards, false, :schema)
 
         # plot-schema
-        ApiCall(:plot_schema_get, :get, Symbol("plot-schema"), required=[:sha1])
+        ApiCall(:plot_schema_get, :GET, Symbol("plot-schema"), required=[:sha1])
     ]
-    eval(current_module(), make_method(_api))
+    eval(make_method(_api))
 end
 
 # --------------------- #
@@ -362,7 +308,7 @@ end
 
 try_lookup(path; kwargs...) = try_me(file_lookup, path; kwargs...)
 
-function grid_overwrite!(cols::Associative; fid::String="", path::String="")
+function grid_overwrite!(cols::AbstractDict; fid::String="", path::String="")
     !isempty(fid) && !isempty(path) && error("Can't pass both fid and path")
     if !isempty(fid)
         grid_info = try_me(grid_retrieve, fid)
@@ -376,7 +322,7 @@ function grid_overwrite!(cols::Associative; fid::String="", path::String="")
     grid_overwrite!(grid_info, cols)
 end
 
-function grid_overwrite!(grid_info::Associative, cols::Associative)
+function grid_overwrite!(grid_info::AbstractDict, cols::AbstractDict)
     col_name_uid = Dict()
     for col in grid_info["cols"]
         col_name_uid[col["name"]] = col["uid"]
@@ -417,11 +363,11 @@ end
 
 
 """
-    grid_overwrite(cols::Associative; fid::String="", path::String="")
+    grid_overwrite(cols::AbstractDict; fid::String="", path::String="")
 
 Replace the data in the grid assocaited with fid `fid` or at the path `path`
-with data in `cols`. `cols` should be an associative mapping from column names
-to column data. The output of this function is an associative mapping from
+with data in `cols`. `cols` should be an AbstractDict mapping from column names
+to column data. The output of this function is an AbstractDict mapping from
 column names to column uids in the updated grid.
 
 There are three possible scenarios for the data:
