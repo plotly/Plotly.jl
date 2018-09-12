@@ -1,6 +1,6 @@
 using Plotly
 using JSON
-using Base.Test
+using Test
 
 #test signin only one endpoint specified
 @test_throws ErrorException Plotly.signin("fake_username", "fake_api_key", Dict("plotly_domain"=>"test"))

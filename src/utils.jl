@@ -57,14 +57,15 @@ function signin(
     )
     global plotlycredentials = PlotlyCredentials(username, api_key)
 
+
+
     # if endpoints are specified both the base and api domains must be
     # specified
     if endpoints != nothing
-        try
-            merge(DEFAULT_CONFIG, endpoints)
-        catch
-            error("You must specify both the base and api endpoints.")
+        if !haskey(endpoints, "plotly_domain") || !haskey(endpoints, "plotly_api_domain")
+            error("You must specify both the `plotly_domain` and `plotly_api_domain`")
         end
+        global plotlyconfig = merge(DEFAULT_CONFIG, endpoints)
     end
 end
 
