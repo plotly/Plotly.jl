@@ -3,7 +3,6 @@
 # ------------- #
 
 const API_ROOT = "https://api.plot.ly/v2/"
-const _VERSION = string(Pkg.installed()["Plotly"])
 import JSON: json
 import HTTP, JSON
 import HTTP: post
@@ -33,7 +32,7 @@ end
 function get_req_headers()
     creds = get_credentials()
     return Dict{Any,Any}(
-        "Plotly-Client-Platform" => "Julia $(_VERSION)",
+        "Plotly-Client-Platform" => "Julia",
         "Content-Type" => "application/json",
         "content-type" => "application/json",
         "Accept" =>  "application/json",  # TODO: for some reason I had to do this to get it to work???
