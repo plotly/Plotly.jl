@@ -4,7 +4,7 @@ using HTTP
 using Reexport
 using JSON
 @reexport using PlotlyJS
-using DelimitedFiles, Pkg, Base64  # stdlib
+using DelimitedFiles, Base64  # stdlib
 
 export set_credentials_file, RemotePlot, download_plot, savefig_remote, post
 
