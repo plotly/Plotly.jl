@@ -40,7 +40,7 @@ function Base.merge(config::PlotlyConfig, other::AbstractDict)
     )
 end
 
-Base.show(io::IO, config::PlotlyConfig) = dump(IOContext(io, :limit=>true), config)
+Base.show(io::IO, config::PlotlyConfig) = dump(IOContext(io, :limit => true), config)
 
 function Base.Dict(config::PlotlyConfig)
     Dict(k => getfield(config, k) for k in fieldnames(PlotlyConfig))
@@ -56,8 +56,7 @@ function signin(
         endpoints::Union{Nothing,AbstractDict}=nothing
     )
     global plotlycredentials = PlotlyCredentials(username, api_key)
-
-
+    set_credentials_file(plotlycredentials)
 
     # if endpoints are specified both the base and api domains must be
     # specified
@@ -110,6 +109,8 @@ function get_config()
     return plotlyconfig
 end
 
+set_credentials_file(pc::PlotlyCredentials) = set_credentials_file(Dict("username" => pc.username, "api_key" => pc.api_key))
+
 """
     set_credentials_file(input_creds::AbstractDict)
 
@@ -118,7 +119,7 @@ userhome/.plotly/.credentials. This includes username and api_key.
 """
 function set_credentials_file(input_creds::AbstractDict)
     credentials_folder = joinpath(homedir(), ".plotly")
-    credentials_file = joinpath(credentials_folder, ".credentials")
+    @show credentials_file = joinpath(credentials_folder, ".credentials")
 
     # check to see if dir/file exists --> if not, create it
     !isdir(credentials_folder) && mkdir(credentials_folder)
@@ -154,6 +155,8 @@ function set_config_file(input_config::AbstractDict)
         write(config_file, JSON.json(config))
     end
 end
+
+set_config_file(;kw...) = set_config_file(Dict(kw...))
 
 """
     set_config_file(config::PlotlyConfig)
