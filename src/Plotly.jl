@@ -9,9 +9,9 @@ using DelimitedFiles, Base64  # stdlib
 export set_credentials_file, RemotePlot, download_plot, savefig_remote, post
 
 const _SRC_ATTRS = let
-    _src_attr_path = joinpath(PlotlyJS._pkg_root, "deps", "src_attrs.csv")
+    _src_attr_path = joinpath(@__DIR__, "src_attrs.csv")
     raw_src_attrs = vec(readdlm(_src_attr_path))
-    src_attrs = map(x -> x[1:end-3], raw_src_attrs)  # remove the `src` suffix
+    src_attrs = map(x -> x[1:end - 3], raw_src_attrs)  # remove the `src` suffix
     Set(map(Symbol, src_attrs))
 end::Set{Symbol}
 
@@ -99,12 +99,12 @@ function post_v2(p::Plot; fileopt=get_config().fileopt, filename=nothing, kwargs
     end
 end
 
-function post(p::Plot; kwargs...)
+function HTTP.post(p::Plot; kwargs...)
     # call JSON.lower to apply themes
     JSON.lower(p)
     config = get_config()
-    default_kwargs = Dict{Symbol,Any}(:filename=>"Plot from Julia API",
-                                       :world_readable=> config.world_readable)
+    default_kwargs = Dict{Symbol,Any}(:filename => "Plot from Julia API",
+                                       :world_readable => config.world_readable)
     default_opts = Dict{Symbol,Any}(:origin => "plot",
                                      :platform => "Julia",
                                      :version => "0.2")
@@ -140,7 +140,7 @@ function post(p::Plot; kwargs...)
     return RemotePlot(HTTP.URI(body["url"]))
 end
 
-post(p::PlotlyJS.SyncPlot; kwargs...) = post(p.plot; kwargs...)
+HTTP.post(p::PlotlyJS.SyncPlot; kwargs...) = post(p.plot; kwargs...)
 post_v2(p::PlotlyJS.SyncPlot; kwargs...) = post_v2(p.plot; kwargs...)
 
 """
@@ -238,7 +238,7 @@ function srcify!(p::Plot; fileopt::Symbol=get_config().fileopt, grid_fn=nothing,
     if fileopt == :create || fileopt == :new
         # add order to each grid
         for (i, (k, v)) in enumerate(data_for_grid)
-            v["order"] = i-1
+            v["order"] = i - 1
         end
         parent_path = dirname(grid_fn)
         if !isempty(parent_path)
@@ -268,11 +268,11 @@ function srcify!(p::Plot; fileopt::Symbol=get_config().fileopt, grid_fn=nothing,
         uid = uid_map[k]
         if key[1] == "trace"
             trace_ind = key[2]
-            the_key = join(vcat(key[3:end-1], string(key[end], "src")), "_")
+            the_key = join(vcat(key[3:end - 1], string(key[end], "src")), "_")
             col_uid = string(fid, ":", uid)
             p.data[trace_ind][the_key] = col_uid
         elseif key[1] == "layout"
-            the_key = join(vcat(key[2:end-1], string(key[end], "src")), "_")
+            the_key = join(vcat(key[2:end - 1], string(key[end], "src")), "_")
             col_uid = string(fid, ":", uid)
             p.layout[the_key] = col_uid
         else
@@ -325,7 +325,7 @@ function savefig_remote(p::Plot, fn::String; width::Int=8, height::Int=6)
     end
 
     if suf in ["png", "jpeg", "svg", "pdf", "eps", "webp"]
-        res = image_generate(p, format=suf, width=width*96, height=height*96)
+        res = image_generate(p, format=suf, width=width * 96, height=height * 96)
         open(fn, "w") do f
             print(f, String(res))
         end
