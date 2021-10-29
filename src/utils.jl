@@ -119,7 +119,7 @@ userhome/.plotly/.credentials. This includes username and api_key.
 """
 function set_credentials_file(input_creds::AbstractDict)
     credentials_folder = joinpath(homedir(), ".plotly")
-    @show credentials_file = joinpath(credentials_folder, ".credentials")
+    credentials_file = joinpath(credentials_folder, ".credentials")
 
     # check to see if dir/file exists --> if not, create it
     !isdir(credentials_folder) && mkdir(credentials_folder)
