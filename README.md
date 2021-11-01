@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/plotly/Plotly.jl.svg)](https://travis-ci.org/plotly/Plotly.jl)
 
-> A Julia interface to the plot.ly plotting library and cloud services
+A Julia interface to the plot.ly plotting library and cloud services
 
 ## Install
 
@@ -10,7 +10,7 @@ Simply run `Pkg.add("Plotly")`.
 
 ## Usage
 
-Plotting functions provided by this package are identical to [PlotlyJS](https://github.com/spencerlyon2/PlotlyJS.jl). Please consult its [documentation](http://spencerlyon.com/PlotlyJS.jl/).
+Plotting functions provided by this package are identical to [PlotlyJS](https://github.com/spencerlyon2/PlotlyJS.jl). Please consult its [documentation](http://spencerlyon.com/PlotlyJS.jl/). In fact, the package depends on `PlotlyJS.jl` and reexports all the methods.
 
 For example, this will display a basic scatter plot:
 
@@ -69,6 +69,16 @@ Use the `download` function with a remote plot object to download a plot stored 
 local_plot = download(RemotePlot("https://plot.ly/~malmaud/73"))
 # or equivalently, local_plot = download_plot("https://plot.ly/~malmaud/73")
 ```
+
+## Working with `plotlyjs()` backend of `Plots.jl` 
+
+A plot created by `Plots.jl` with `plotlyjs()` backend has the type `Plot{Plots.PlotlyJSBackend()}`.
+To use the `Plotly.jl` interfeces, the plot object needs to be converted by 
+```julia
+my_plot = Plots.plotlyjs_syncplot(plots_plot)
+```
+The object `my_plot` can be handed to the Cloud API descrived above.
+
 
 ## Acknowledgements
 
