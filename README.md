@@ -10,7 +10,7 @@ Simply run `Pkg.add("Plotly")`.
 
 ## Usage
 
-Plotting functions provided by this package are identical to [PlotlyJS](https://github.com/spencerlyon2/PlotlyJS.jl). Please consult its [documentation](http://spencerlyon.com/PlotlyJS.jl/). In fact, the package depends on `PlotlyJS.jl` and reexports all the methods.
+Plotting functions provided by this package are identical to [PlotlyJS](https://github.com/JuliaPlots/PlotlyJS.jl). Please consult its [documentation](http://juliaplots.org/PlotlyJS.jl/stable/). In fact, the package depends on `PlotlyJS.jl` and reexports all the methods.
 
 For example, this will display a basic scatter plot:
 
