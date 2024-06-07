@@ -4,6 +4,12 @@
 
 A Julia interface to the plot.ly plotting library and cloud services
 
+<div align="center">
+  <a href="https://dash.plotly.com/project-maintenance">
+    <img src="https://dash.plotly.com/assets/images/maintained-by-community.png" width="400px" alt="Maintained by the Plotly Community">
+  </a>
+</div>
+
 ## Install
 
 Simply run `Pkg.add("Plotly")`.
